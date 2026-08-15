@@ -32,6 +32,19 @@ model UnitOfMeasure {
   products  Product[]
 }
 
+model Category {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  nameRu    String
+  nameUz    String
+  nameEn    String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
 model Product {
   id             String         @id @default(cuid())
   /// Kept in sync with nameRu for compatibility
@@ -46,11 +59,14 @@ model Product {
   descriptionEn  String?
   unitId         String?
   unit           UnitOfMeasure? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   batches        Batch[]
 
   @@index([unitId])
+  @@index([categoryId])
 }
 
 model Batch {

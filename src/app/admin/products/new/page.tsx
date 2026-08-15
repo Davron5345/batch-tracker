@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useI18n } from "@/components/I18nProvider";
 import { pickLocalizedName } from "@/lib/i18n/localize";
 
-type Unit = {
+type RefItem = {
   id: string;
   code: string;
-  symbol: string | null;
+  symbol?: string | null;
   nameRu: string;
   nameUz: string;
   nameEn: string;
@@ -18,7 +18,6 @@ type Unit = {
 export default function NewProductPage() {
   const router = useRouter();
   const { t, locale } = useI18n();
-  const [sku, setSku] = useState("");
   const [nameRu, setNameRu] = useState("");
   const [nameUz, setNameUz] = useState("");
   const [nameEn, setNameEn] = useState("");
@@ -26,15 +25,20 @@ export default function NewProductPage() {
   const [descriptionUz, setDescriptionUz] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
   const [unitId, setUnitId] = useState("");
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [units, setUnits] = useState<RefItem[]>([]);
+  const [categories, setCategories] = useState<RefItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/units?active=1")
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setUnits)
-      .catch(() => setUnits([]));
+    Promise.all([
+      fetch("/api/units?active=1").then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/categories?active=1").then((r) => (r.ok ? r.json() : [])),
+    ]).then(([u, c]) => {
+      setUnits(u);
+      setCategories(c);
+    });
   }, []);
 
   async function onSubmit(e: FormEvent) {
@@ -45,7 +49,6 @@ export default function NewProductPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sku,
         nameRu,
         nameUz,
         nameEn,
@@ -53,6 +56,7 @@ export default function NewProductPage() {
         descriptionUz,
         descriptionEn,
         unitId: unitId || null,
+        categoryId: categoryId || null,
       }),
     });
     const data = await res.json();
@@ -77,7 +81,27 @@ export default function NewProductPage() {
       <form onSubmit={onSubmit} className="card space-y-4 p-4 sm:p-5">
         <div className="field">
           <label htmlFor="sku">{t.products.sku}</label>
-          <input id="sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
+          <input
+            id="sku"
+            value={t.products.skuAuto}
+            disabled
+            className="opacity-80"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="categoryId">{t.products.category}</label>
+          <select
+            id="categoryId"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">{t.products.categoryNone}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {pickLocalizedName(c, locale)} · {c.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="unitId">{t.products.unit}</label>

@@ -17,6 +17,14 @@ type Unit = {
   nameEn: string;
 };
 
+type Category = {
+  id: string;
+  code: string;
+  nameRu: string;
+  nameUz: string;
+  nameEn: string;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -29,7 +37,9 @@ type Product = {
   descriptionUz: string | null;
   descriptionEn: string | null;
   unitId: string | null;
+  categoryId: string | null;
   unit: Unit | null;
+  category: Category | null;
   batches: Array<{
     id: string;
     batchNumber: string;
@@ -52,7 +62,9 @@ export default function ProductDetailPage() {
   const [descriptionUz, setDescriptionUz] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
   const [unitId, setUnitId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [units, setUnits] = useState<Unit[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [canWrite, setCanWrite] = useState(false);
@@ -63,9 +75,10 @@ export default function ProductDetailPage() {
       const role = session?.user?.role;
       setCanWrite(role === "ADMIN" || role === "SUPER_ADMIN");
 
-      const [productRes, unitsRes] = await Promise.all([
+      const [productRes, unitsRes, categoriesRes] = await Promise.all([
         fetch(`/api/products/${id}`),
         fetch("/api/units?active=1"),
+        fetch("/api/categories?active=1"),
       ]);
       if (!productRes.ok) {
         setError(t.common.notFound);
@@ -81,7 +94,9 @@ export default function ProductDetailPage() {
       setDescriptionUz(data.descriptionUz || "");
       setDescriptionEn(data.descriptionEn || "");
       setUnitId(data.unitId || "");
+      setCategoryId(data.categoryId || "");
       if (unitsRes.ok) setUnits(await unitsRes.json());
+      if (categoriesRes.ok) setCategories(await categoriesRes.json());
     }
     load();
   }, [id, t.common.notFound]);
@@ -94,7 +109,6 @@ export default function ProductDetailPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sku,
         nameRu,
         nameUz,
         nameEn,
@@ -102,6 +116,7 @@ export default function ProductDetailPage() {
         descriptionUz,
         descriptionEn,
         unitId: unitId || null,
+        categoryId: categoryId || null,
       }),
     });
     const data = await res.json();
@@ -147,13 +162,24 @@ export default function ProductDetailPage() {
       <form onSubmit={onSubmit} className="card space-y-4 p-4 sm:p-5">
         <div className="field">
           <label htmlFor="sku">{t.products.sku}</label>
-          <input
-            id="sku"
-            value={sku}
-            onChange={(e) => setSku(e.target.value)}
-            required
+          <input id="sku" value={sku} disabled className="opacity-80" />
+          <p className="text-xs text-[var(--muted)]">{t.products.skuAuto}</p>
+        </div>
+        <div className="field">
+          <label htmlFor="categoryId">{t.products.category}</label>
+          <select
+            id="categoryId"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
             disabled={!canWrite}
-          />
+          >
+            <option value="">{t.products.categoryNone}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {pickLocalizedName(c, locale)} · {c.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="unitId">{t.products.unit}</label>

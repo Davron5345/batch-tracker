@@ -10,7 +10,11 @@ export default async function ProductsPage() {
   const canWrite = canWriteProducts(session!.user.role);
   const { t, locale } = await getServerDictionary();
   const products = await prisma.product.findMany({
-    include: { _count: { select: { batches: true } }, unit: true },
+    include: {
+      _count: { select: { batches: true } },
+      unit: true,
+      category: true,
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -41,6 +45,9 @@ export default async function ProductsPage() {
             <div className="card-title">{pickLocalizedName(product, locale)}</div>
             <div className="mobile-card-meta">
               {t.products.sku} {product.sku}
+              {product.category
+                ? ` · ${pickLocalizedName(product.category, locale)}`
+                : ""}
               {product.unit
                 ? ` · ${pickLocalizedName(product.unit, locale)}`
                 : ""}
@@ -64,6 +71,7 @@ export default async function ProductsPage() {
               <tr>
                 <th>{t.products.nameRu}</th>
                 <th>{t.products.sku}</th>
+                <th>{t.products.category}</th>
                 <th>{t.products.unit}</th>
                 <th>{t.products.batchesCount}</th>
               </tr>
@@ -71,7 +79,7 @@ export default async function ProductsPage() {
             <tbody>
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-[var(--muted)]">
+                  <td colSpan={5} className="text-[var(--muted)]">
                     {t.products.empty}
                   </td>
                 </tr>
@@ -92,6 +100,11 @@ export default async function ProductsPage() {
                     </div>
                   </td>
                   <td>{product.sku}</td>
+                  <td>
+                    {product.category
+                      ? pickLocalizedName(product.category, locale)
+                      : "—"}
+                  </td>
                   <td>
                     {product.unit
                       ? pickLocalizedName(product.unit, locale)

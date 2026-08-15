@@ -64,9 +64,12 @@ export type Dictionary = {
     descRu: string;
     descUz: string;
     descEn: string;
-    unit: string;
-    unitNone: string;
-    empty: string;
+      unit: string;
+      unitNone: string;
+      category: string;
+      categoryNone: string;
+      skuAuto: string;
+      empty: string;
     batchesCount: string;
     backToList: string;
     deleteConfirm: string;
@@ -86,6 +89,8 @@ export type Dictionary = {
     subtitle: string;
     unitsTitle: string;
     unitsDesc: string;
+    categoriesTitle: string;
+    categoriesDesc: string;
     open: string;
   };
   units: {
@@ -100,6 +105,17 @@ export type Dictionary = {
     empty: string;
     deleteConfirm: string;
   };
+  categories: {
+    title: string;
+    subtitle: string;
+    add: string;
+    code: string;
+    nameRu: string;
+    nameUz: string;
+    nameEn: string;
+    empty: string;
+    deleteConfirm: string;
+  };
   public: {
     batch: string;
     batchNumber: string;
@@ -108,8 +124,9 @@ export type Dictionary = {
     photos: string;
     videos: string;
     scanner: string;
-    unit: string;
-    notFound: string;
+      unit: string;
+      category: string;
+      notFound: string;
   };
   roles: {
     SUPER_ADMIN: string;
@@ -186,6 +203,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
       descEn: "Описание (EN)",
       unit: "Ед. измерения",
       unitNone: "Не выбрано",
+      category: "Категория",
+      categoryNone: "Не выбрано",
+      skuAuto: "Присваивается автоматически",
       empty: "Товаров пока нет",
       batchesCount: "Партий",
       backToList: "К списку товаров",
@@ -203,9 +223,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     directories: {
       title: "Справочники",
-      subtitle: "Единицы измерения и другие справочные данные",
+      subtitle: "Единицы измерения, категории и другие справочные данные",
       unitsTitle: "Единицы измерения",
       unitsDesc: "кг, шт, л и другие единицы для товаров",
+      categoriesTitle: "Категории",
+      categoriesDesc: "Группы товаров для удобной классификации",
       open: "Открыть",
     },
     units: {
@@ -220,6 +242,17 @@ export const dictionaries: Record<Locale, Dictionary> = {
       empty: "Единиц пока нет",
       deleteConfirm: "Удалить единицу измерения?",
     },
+    categories: {
+      title: "Категории",
+      subtitle: "Справочник категорий на 3 языках",
+      add: "Добавить категорию",
+      code: "Код",
+      nameRu: "Название (RU)",
+      nameUz: "Название (UZ)",
+      nameEn: "Название (EN)",
+      empty: "Категорий пока нет",
+      deleteConfirm: "Удалить категорию?",
+    },
     public: {
       batch: "Партия",
       batchNumber: "Номер партии",
@@ -229,6 +262,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       videos: "Видео",
       scanner: "Сканер QR",
       unit: "Ед. изм.",
+      category: "Категория",
       notFound: "Партия не найдена",
     },
     roles: {
@@ -304,6 +338,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
       descEn: "Tavsif (EN)",
       unit: "O‘lchov birligi",
       unitNone: "Tanlanmagan",
+      category: "Kategoriya",
+      categoryNone: "Tanlanmagan",
+      skuAuto: "Avtomatik beriladi",
       empty: "Hali mahsulot yo‘q",
       batchesCount: "Partiyalar",
       backToList: "Mahsulotlar ro‘yxatiga",
@@ -321,9 +358,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     directories: {
       title: "Ma’lumotnomalar",
-      subtitle: "O‘lchov birliklari va boshqa ma’lumotnomalar",
+      subtitle: "O‘lchov birliklari, kategoriyalar va boshqa ma’lumotnomalar",
       unitsTitle: "O‘lchov birliklari",
       unitsDesc: "kg, dona, l va boshqa birliklar",
+      categoriesTitle: "Kategoriyalar",
+      categoriesDesc: "Mahsulot guruhlari",
       open: "Ochish",
     },
     units: {
@@ -338,6 +377,17 @@ export const dictionaries: Record<Locale, Dictionary> = {
       empty: "Hali birlik yo‘q",
       deleteConfirm: "O‘lchov birligi o‘chirilsinmi?",
     },
+    categories: {
+      title: "Kategoriyalar",
+      subtitle: "Kategoriyalar ma’lumotnomasi 3 tilda",
+      add: "Kategoriya qo‘shish",
+      code: "Kod",
+      nameRu: "Nomi (RU)",
+      nameUz: "Nomi (UZ)",
+      nameEn: "Nomi (EN)",
+      empty: "Hali kategoriya yo‘q",
+      deleteConfirm: "Kategoriya o‘chirilsinmi?",
+    },
     public: {
       batch: "Partiya",
       batchNumber: "Partiya raqami",
@@ -347,6 +397,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       videos: "Video",
       scanner: "QR skaner",
       unit: "O‘lchov birligi",
+      category: "Kategoriya",
       notFound: "Partiya topilmadi",
     },
     roles: {
@@ -422,6 +473,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
       descEn: "Description (EN)",
       unit: "Unit of measure",
       unitNone: "Not selected",
+      category: "Category",
+      categoryNone: "Not selected",
+      skuAuto: "Assigned automatically",
       empty: "No products yet",
       batchesCount: "Batches",
       backToList: "Back to products",
@@ -439,9 +493,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     directories: {
       title: "Directories",
-      subtitle: "Units of measure and other reference data",
+      subtitle: "Units of measure, categories and other reference data",
       unitsTitle: "Units of measure",
       unitsDesc: "kg, pcs, L and other units for products",
+      categoriesTitle: "Categories",
+      categoriesDesc: "Product groups for classification",
       open: "Open",
     },
     units: {
@@ -456,6 +512,17 @@ export const dictionaries: Record<Locale, Dictionary> = {
       empty: "No units yet",
       deleteConfirm: "Delete this unit?",
     },
+    categories: {
+      title: "Categories",
+      subtitle: "Categories directory in 3 languages",
+      add: "Add category",
+      code: "Code",
+      nameRu: "Name (RU)",
+      nameUz: "Name (UZ)",
+      nameEn: "Name (EN)",
+      empty: "No categories yet",
+      deleteConfirm: "Delete this category?",
+    },
     public: {
       batch: "Batch",
       batchNumber: "Batch number",
@@ -465,6 +532,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       videos: "Videos",
       scanner: "QR scanner",
       unit: "Unit",
+      category: "Category",
       notFound: "Batch not found",
     },
     roles: {

@@ -22,6 +22,18 @@ export default async function DirectoriesPage() {
             {t.directories.open} →
           </span>
         </Link>
+        <Link
+          href="/admin/directories/categories"
+          className="card block p-5 transition hover:border-[var(--accent)]"
+        >
+          <div className="text-lg font-semibold">{t.directories.categoriesTitle}</div>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {t.directories.categoriesDesc}
+          </p>
+          <span className="mt-4 inline-flex text-sm font-semibold text-[var(--accent)]">
+            {t.directories.open} →
+          </span>
+        </Link>
       </div>
     </div>
   );

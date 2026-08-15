@@ -5,11 +5,10 @@ import { writeAuditLog } from "@/lib/audit";
 
 type Params = { params: Promise<{ id: string }> };
 
-function parseProductBody(body: Record<string, unknown>) {
+function parseProductBody(body: Record<string, unknown>, sku: string) {
   const nameRu = String(body.nameRu || body.name || "").trim();
   const nameUz = String(body.nameUz || "").trim();
   const nameEn = String(body.nameEn || "").trim();
-  const sku = String(body.sku || "").trim();
   const descriptionRu = body.descriptionRu
     ? String(body.descriptionRu).trim()
     : body.description
@@ -22,6 +21,7 @@ function parseProductBody(body: Record<string, unknown>) {
     ? String(body.descriptionEn).trim()
     : null;
   const unitId = body.unitId ? String(body.unitId).trim() : null;
+  const categoryId = body.categoryId ? String(body.categoryId).trim() : null;
 
   return {
     name: nameRu,
@@ -34,6 +34,7 @@ function parseProductBody(body: Record<string, unknown>) {
     descriptionUz,
     descriptionEn,
     unitId: unitId || null,
+    categoryId: categoryId || null,
   };
 }
 
@@ -46,6 +47,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { id },
     include: {
       unit: true,
+      category: true,
       batches: {
         orderBy: { manufacturedAt: "desc" },
         include: { _count: { select: { media: true } } },
@@ -63,21 +65,28 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (authz.error) return authz.error;
 
   const { id } = await params;
-  const body = await req.json();
-  const data = parseProductBody(body);
+  const existing = await prisma.product.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "Товар не найден" }, { status: 404 });
+  }
 
-  if (!data.nameRu || !data.sku) {
+  const body = await req.json();
+  const nameRu = String(body.nameRu || body.name || "").trim();
+  if (!nameRu) {
     return NextResponse.json(
-      { error: "Название (RU) и артикул обязательны" },
+      { error: "Название (RU) обязательно" },
       { status: 400 }
     );
   }
+
+  // SKU is immutable after create
+  const data = parseProductBody(body, existing.sku);
 
   try {
     const product = await prisma.product.update({
       where: { id },
       data,
-      include: { unit: true },
+      include: { unit: true, category: true },
     });
     await writeAuditLog({
       userId: authz.session!.user.id,

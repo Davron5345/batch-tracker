@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit";
+import { generateUniqueSku } from "@/lib/sku";
 
-function parseProductBody(body: Record<string, unknown>) {
+function parseProductBody(body: Record<string, unknown>, sku: string) {
   const nameRu = String(body.nameRu || body.name || "").trim();
   const nameUz = String(body.nameUz || "").trim();
   const nameEn = String(body.nameEn || "").trim();
-  const sku = String(body.sku || "").trim();
   const descriptionRu = body.descriptionRu
     ? String(body.descriptionRu).trim()
     : body.description
@@ -20,6 +20,7 @@ function parseProductBody(body: Record<string, unknown>) {
     ? String(body.descriptionEn).trim()
     : null;
   const unitId = body.unitId ? String(body.unitId).trim() : null;
+  const categoryId = body.categoryId ? String(body.categoryId).trim() : null;
 
   return {
     name: nameRu,
@@ -32,6 +33,7 @@ function parseProductBody(body: Record<string, unknown>) {
     descriptionUz,
     descriptionEn,
     unitId: unitId || null,
+    categoryId: categoryId || null,
   };
 }
 
@@ -57,6 +59,7 @@ export async function GET(req: NextRequest) {
     include: {
       _count: { select: { batches: true } },
       unit: true,
+      category: true,
     },
     orderBy: { updatedAt: "desc" },
   });
@@ -69,19 +72,22 @@ export async function POST(req: NextRequest) {
   if (authz.error) return authz.error;
 
   const body = await req.json();
-  const data = parseProductBody(body);
-
-  if (!data.nameRu || !data.sku) {
+  const nameRu = String(body.nameRu || body.name || "").trim();
+  if (!nameRu) {
     return NextResponse.json(
-      { error: "Название (RU) и артикул обязательны" },
+      { error: "Название (RU) обязательно" },
       { status: 400 }
     );
   }
 
+  // SKU always auto-assigned on create (manual override ignored)
+  const sku = await generateUniqueSku();
+  const data = parseProductBody(body, sku);
+
   try {
     const product = await prisma.product.create({
       data,
-      include: { unit: true },
+      include: { unit: true, category: true },
     });
     await writeAuditLog({
       userId: authz.session!.user.id,
@@ -93,8 +99,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(product, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "Товар с таким артикулом уже существует" },
-      { status: 409 }
+      { error: "Не удалось создать товар" },
+      { status: 400 }
     );
   }
 }

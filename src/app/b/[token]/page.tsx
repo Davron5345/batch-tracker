@@ -36,7 +36,7 @@ export default async function PublicBatchPage({ params }: Params) {
   const batch = await prisma.batch.findUnique({
     where: { publicToken: token },
     include: {
-      product: { include: { unit: true } },
+      product: { include: { unit: true, category: true } },
       media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
     },
   });
@@ -49,6 +49,9 @@ export default async function PublicBatchPage({ params }: Params) {
   const productDescription = pickLocalizedDescription(batch.product, locale);
   const unitLabel = batch.product.unit
     ? pickLocalizedName(batch.product.unit, locale)
+    : "";
+  const categoryLabel = batch.product.category
+    ? pickLocalizedName(batch.product.category, locale)
     : "";
   const characteristics = parseCharacteristics(batch.characteristics);
   const photos = batch.media.filter((m) => m.type === "photo");
@@ -101,8 +104,16 @@ export default async function PublicBatchPage({ params }: Params) {
                 {formatDateLocalized(batch.manufacturedAt, locale)}
               </dd>
             </div>
+            {categoryLabel && (
+              <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  {t.public.category}
+                </dt>
+                <dd className="mt-1 text-lg font-semibold">{categoryLabel}</dd>
+              </div>
+            )}
             {unitLabel && (
-              <div className="rounded-xl bg-[#f8fafc] px-4 py-3 sm:col-span-2">
+              <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                   {t.public.unit}
                 </dt>

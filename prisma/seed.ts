@@ -54,6 +54,37 @@ const DEFAULT_UNITS = [
   },
 ];
 
+const DEFAULT_CATEGORIES = [
+  {
+    code: "general",
+    nameRu: "Общее",
+    nameUz: "Umumiy",
+    nameEn: "General",
+    sortOrder: 1,
+  },
+  {
+    code: "food",
+    nameRu: "Продукты питания",
+    nameUz: "Oziq-ovqat",
+    nameEn: "Food",
+    sortOrder: 2,
+  },
+  {
+    code: "industrial",
+    nameRu: "Промтовары",
+    nameUz: "Sanoat tovarlari",
+    nameEn: "Industrial",
+    sortOrder: 3,
+  },
+  {
+    code: "packaging",
+    nameRu: "Упаковка",
+    nameUz: "Qadoqlash",
+    nameEn: "Packaging",
+    sortOrder: 4,
+  },
+];
+
 async function main() {
   const existing = await prisma.user.findUnique({
     where: { email: "admin@local" },
@@ -89,6 +120,21 @@ async function main() {
     });
   }
   console.log(`Seed: ${DEFAULT_UNITS.length} units of measure`);
+
+  for (const category of DEFAULT_CATEGORIES) {
+    await prisma.category.upsert({
+      where: { code: category.code },
+      update: {
+        nameRu: category.nameRu,
+        nameUz: category.nameUz,
+        nameEn: category.nameEn,
+        sortOrder: category.sortOrder,
+        isActive: true,
+      },
+      create: category,
+    });
+  }
+  console.log(`Seed: ${DEFAULT_CATEGORIES.length} categories`);
 }
 
 main()
