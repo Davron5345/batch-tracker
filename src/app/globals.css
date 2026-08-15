@@ -224,3 +224,47 @@ button {
   background: #fff4e5;
   color: var(--warning);
 }
+
+/* YouTube-style indeterminate “snake” progress while video uploads */
+.yt-snake-track {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.yt-snake-track--static .yt-snake-bar {
+  animation: none;
+  left: 0;
+  width: 35%;
+  opacity: 0.45;
+}
+
+.yt-snake-bar {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  height: 100%;
+  width: 40%;
+  border-radius: 999px;
+  background: #ff0033;
+  animation: yt-snake 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.yt-snake-bar--delayed {
+  width: 22%;
+  opacity: 0.55;
+  animation-delay: 0.55s;
+  animation-duration: 1.55s;
+}
+
+@keyframes yt-snake {
+  0% {
+    left: -45%;
+  }
+  100% {
+    left: 110%;
+  }
+}

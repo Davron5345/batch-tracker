@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "next-auth/react";
 import { CharacteristicsEditor } from "@/components/CharacteristicsEditor";
+import { BatchVideoPlayer } from "@/components/BatchVideoPlayer";
 import {
   parseCharacteristics,
-  youtubeEmbedUrl,
   type Characteristic,
 } from "@/lib/utils";
 
@@ -416,15 +416,8 @@ export default function BatchDetailPage() {
                 {item.type === "photo" ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={item.urlOrPath} alt={item.caption || ""} className="h-48 w-full object-cover" />
-                ) : item.source === "youtube" ? (
-                  <iframe
-                    src={youtubeEmbedUrl(item.urlOrPath) || undefined}
-                    className="h-48 w-full"
-                    title={item.caption || "YouTube"}
-                    allowFullScreen
-                  />
                 ) : (
-                  <video src={item.urlOrPath} controls className="h-48 w-full object-cover" />
+                  <BatchVideoPlayer video={item} compact />
                 )}
                 <div className="flex items-start justify-between gap-2 p-3">
                   <div className="text-sm">

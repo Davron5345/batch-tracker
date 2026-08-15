@@ -123,10 +123,12 @@ export type Dictionary = {
     characteristics: string;
     photos: string;
     videos: string;
+    videoUploading: string;
+    videoFailed: string;
     scanner: string;
-      unit: string;
-      category: string;
-      notFound: string;
+    unit: string;
+    category: string;
+    notFound: string;
   };
   roles: {
     SUPER_ADMIN: string;
@@ -260,6 +262,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       characteristics: "Характеристики",
       photos: "Фото",
       videos: "Видео",
+      videoUploading: "Загрузка на YouTube…",
+      videoFailed: "Не удалось загрузить на YouTube",
       scanner: "Сканер QR",
       unit: "Ед. изм.",
       category: "Категория",
@@ -395,6 +399,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       characteristics: "Xususiyatlar",
       photos: "Foto",
       videos: "Video",
+      videoUploading: "YouTube’ga yuklanmoqda…",
+      videoFailed: "YouTube’ga yuklab bo‘lmadi",
       scanner: "QR skaner",
       unit: "O‘lchov birligi",
       category: "Kategoriya",
@@ -530,6 +536,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       characteristics: "Specifications",
       photos: "Photos",
       videos: "Videos",
+      videoUploading: "Uploading to YouTube…",
+      videoFailed: "Could not upload to YouTube",
       scanner: "QR scanner",
       unit: "Unit",
       category: "Category",

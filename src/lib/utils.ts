@@ -28,9 +28,14 @@ export function stringifyCharacteristics(items: Characteristic[]): string {
   );
 }
 
-export function extractYoutubeId(url: string): string | null {
+const YOUTUBE_ID_RE = /^[\w-]{11}$/;
+
+export function extractYoutubeId(urlOrId: string): string | null {
+  const raw = urlOrId.trim();
+  if (!raw) return null;
+  if (YOUTUBE_ID_RE.test(raw)) return raw;
   try {
-    const u = new URL(url.trim());
+    const u = new URL(raw);
     if (u.hostname.includes("youtu.be")) {
       return u.pathname.slice(1).split("/")[0] || null;
     }
@@ -49,9 +54,21 @@ export function extractYoutubeId(url: string): string | null {
   return null;
 }
 
-export function youtubeEmbedUrl(url: string): string | null {
-  const id = extractYoutubeId(url);
-  return id ? `https://www.youtube.com/embed/${id}` : null;
+export function youtubeEmbedUrl(
+  urlOrId: string,
+  youtubeVideoId?: string | null
+): string | null {
+  const id = youtubeVideoId?.trim() || extractYoutubeId(urlOrId);
+  return id && YOUTUBE_ID_RE.test(id)
+    ? `https://www.youtube.com/embed/${id}`
+    : null;
+}
+
+export function isYoutubePipelineBusy(status?: string | null): boolean {
+  return (
+    status === "pending_youtube" ||
+    status === "uploading_youtube"
+  );
 }
 
 export function formatDateRu(date: Date | string): string {

@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import {
   formatDateLocalized,
   parseCharacteristics,
-  youtubeEmbedUrl,
 } from "@/lib/utils";
 import {
   getServerDictionary,
@@ -12,6 +11,7 @@ import {
   pickLocalizedName,
 } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { PublicVideos } from "@/components/PublicVideos";
 
 type Params = { params: Promise<{ token: string }> };
 
@@ -168,36 +168,20 @@ export default async function PublicBatchPage({ params }: Params) {
         )}
 
         {videos.length > 0 && (
-          <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">{t.public.videos}</h2>
-            <div className="mt-4 space-y-4">
-              {videos.map((video) => (
-                <div key={video.id} className="overflow-hidden rounded-xl bg-black">
-                  {video.source === "youtube" ? (
-                    <iframe
-                      src={youtubeEmbedUrl(video.urlOrPath) || undefined}
-                      className="aspect-video w-full"
-                      title={video.caption || "YouTube"}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      src={video.urlOrPath}
-                      controls
-                      className="aspect-video w-full"
-                      playsInline
-                    />
-                  )}
-                  {video.caption && (
-                    <p className="bg-white px-3 py-2 text-sm text-[var(--muted)]">
-                      {video.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
+          <PublicVideos
+            token={token}
+            heading={t.public.videos}
+            uploadingLabel={t.public.videoUploading}
+            failedLabel={t.public.videoFailed}
+            initialVideos={videos.map((video) => ({
+              id: video.id,
+              source: video.source,
+              urlOrPath: video.urlOrPath,
+              caption: video.caption,
+              pipelineStatus: video.pipelineStatus,
+              youtubeVideoId: video.youtubeVideoId,
+            }))}
+          />
         )}
       </div>
     </main>
