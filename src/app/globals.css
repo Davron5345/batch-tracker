@@ -421,7 +421,8 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #dce4eb;
 }
 
 .id-card__photo-empty {
@@ -560,7 +561,7 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transform-origin: center center;
   transition: transform 0.08s ease-out;
   pointer-events: none;

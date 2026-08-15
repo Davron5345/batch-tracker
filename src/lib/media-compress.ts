@@ -4,8 +4,7 @@ import path from "path";
 import sharp from "sharp";
 import { uploadsAbsDir } from "@/lib/storage-paths";
 
-const IMAGE_MAX_EDGE = 1600;
-const IMAGE_JPEG_QUALITY = 78;
+const IMAGE_JPEG_QUALITY = 82;
 const VIDEO_MAX_HEIGHT = 720;
 const VIDEO_CRF = 28;
 
@@ -41,7 +40,7 @@ export type CompressResult = {
   compressed: boolean;
 };
 
-/** Compress photo → JPEG (max edge 1600px). */
+/** Compress photo → JPEG, keep full frame (no crop / no forced resize). */
 export async function compressAndSaveImage(
   input: Buffer,
   baseName: string
@@ -51,14 +50,9 @@ export async function compressAndSaveImage(
   const filename = `${baseName}.jpg`;
   const absPath = path.join(dir, filename);
 
+  // rotate() only applies EXIF orientation — does not crop
   const out = await sharp(input, { failOn: "none" })
     .rotate()
-    .resize({
-      width: IMAGE_MAX_EDGE,
-      height: IMAGE_MAX_EDGE,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
     .jpeg({ quality: IMAGE_JPEG_QUALITY, mozjpeg: true })
     .toBuffer();
 
