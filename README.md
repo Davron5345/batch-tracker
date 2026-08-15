@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Партии — учёт товаров с QR
 
-## Getting Started
+Веб-система учёта товаров по партиям: админка с ролями, фото/видео (локально и YouTube), QR для потребителей и PWA-сканер.
 
-First, run the development server:
+## Стек
+
+- Next.js 15 (App Router) + TypeScript
+- Prisma + **PostgreSQL**
+- Auth.js (Credentials)
+- PWA (`manifest` + service worker)
+- Деплой: **Railway** (`nixpacks.toml`)
+
+## Быстрый старт (локально)
+
+Нужен PostgreSQL (например Docker):
 
 ```bash
+docker run --name batch-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=batch_tracker -p 5432:5432 -d postgres:16
+cp .env.example .env
+# DATABASE_URL уже подходит к контейнеру выше
+npm install
+npx prisma migrate deploy
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Railway
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Создайте проект на [Railway](https://railway.app) и добавьте сервис из GitHub-репозитория.
+2. Добавьте плагин **PostgreSQL** и привяжите `DATABASE_URL` к веб-сервису.
+3. Задайте переменные:
 
-## Learn More
+| Переменная | Значение |
+|---|---|
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_TRUST_HOST` | `true` |
+| `NEXT_PUBLIC_APP_URL` | публичный URL приложения (`https://….up.railway.app`) |
+| `CRON_SECRET` | случайная строка для джобы медиа |
+| `DATABASE_URL` | из плагина Postgres (обычно подтягивается сам) |
 
-To learn more about Next.js, take a look at the following resources:
+4. (Рекомендуется) Volume на путь `/app/public/uploads` и `/app/storage`, иначе загруженные файлы пропадут при редеплое.
+5. После деплоя: вход `admin@local` / `Admin123!` — сразу смените пароль.
+6. Cron (каждые 10–15 мин): `curl -H "Authorization: Bearer $CRON_SECRET" https://ВАШ-URL/api/jobs/media-pipeline`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Сборка ставит `ffmpeg` через Nixpacks для сжатия архива видео.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Переменные окружения
 
-## Deploy on Vercel
+См. `.env.example`. Опционально YouTube: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN` (`npm run youtube:auth`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Учётная запись по умолчанию
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+После seed:
+
+- **Email:** `admin@local`
+- **Пароль:** `Admin123!`
+- **Роль:** `SUPER_ADMIN`
+
+## Роли
+
+| Роль | Права |
+|---|---|
+| `VIEWER` | Просмотр товаров, партий, журнала |
+| `EDITOR` | + создание/редактирование партий и медиа |
+| `ADMIN` | + CRUD товаров |
+| `SUPER_ADMIN` | + управление пользователями |
+
+## Ключевые маршруты
+
+| Путь | Назначение |
+|---|---|
+| `/login` | Вход |
+| `/admin` | Дашборд и поиск |
+| `/admin/products` | Товары |
+| `/admin/batches` | Партии, медиа, QR |
+| `/admin/users` | Пользователи (супер-админ) |
+| `/admin/audit` | Журнал изменений |
+| `/b/[token]` | Публичная страница партии (QR) |
+| `/scan` | Мобильный сканер QR (PWA) |
+
+## Видео-пайплайн
+
+1. Загрузка на сервер → 2. фон: YouTube → 3. сжатие в `storage/archive/` → 4. удаление через 90 дней.  
+**QR не меняется** (`/b/{publicToken}`).
+
+```bash
+npm run media:pipeline
+```
+
+## Скрипты
+
+- `npm run dev` — разработка
+- `npm run build` / `npm start` — прод
+- `npm run db:deploy` — миграции
+- `npm run db:seed` — сид админа (только если ещё нет)
+- `npm run youtube:auth` — refresh token YouTube
+- `npm run media:pipeline` — очередь YouTube/архив + purge

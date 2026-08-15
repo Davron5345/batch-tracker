@@ -1,0 +1,13 @@
+# https://nixpacks.com/docs/configuration/file
+[phases.setup]
+aptPkgs = ["ffmpeg"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npx prisma generate", "npm run build"]
+
+[start]
+cmd = "npx prisma migrate deploy && npx tsx prisma/seed.ts && next start -H 0.0.0.0 -p $PORT"
+
