@@ -26,6 +26,8 @@ export const MediaPipelineStatus = {
   none: "none",
   pending_youtube: "pending_youtube",
   uploading_youtube: "uploading_youtube",
+  /** Uploaded to YouTube, waiting until YouTube finishes processing (embeddable) */
+  processing_youtube: "processing_youtube",
   pending_archive: "pending_archive",
   archiving: "archiving",
   archived: "archived",

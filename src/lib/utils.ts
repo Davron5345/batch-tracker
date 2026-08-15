@@ -67,7 +67,8 @@ export function youtubeEmbedUrl(
 export function isYoutubePipelineBusy(status?: string | null): boolean {
   return (
     status === "pending_youtube" ||
-    status === "uploading_youtube"
+    status === "uploading_youtube" ||
+    status === "processing_youtube"
   );
 }
 

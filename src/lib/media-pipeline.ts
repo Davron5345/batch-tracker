@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { MediaPipelineStatus } from "@/lib/constants";
-import { isYoutubeConfigured, uploadVideoToYoutube } from "@/lib/youtube";
+import {
+  isYoutubeConfigured,
+  uploadVideoToYoutube,
+  waitUntilYoutubePlayable,
+} from "@/lib/youtube";
 import {
   compressAndArchiveVideo,
   deleteArchiveFile,
@@ -24,6 +28,7 @@ export async function processPendingMedia(limit = 5) {
       pipelineStatus: {
         in: [
           MediaPipelineStatus.pending_youtube,
+          MediaPipelineStatus.processing_youtube,
           MediaPipelineStatus.pending_archive,
           MediaPipelineStatus.youtube_failed,
           MediaPipelineStatus.archive_failed,
@@ -59,14 +64,17 @@ export async function processMediaPipeline(mediaId: string) {
 
     const status = media.pipelineStatus;
 
-    // Upload to YouTube first; leave archive for a later job tick so clients
-    // can keep playing /uploads until the UI switches to the YouTube embed.
     if (
       status === MediaPipelineStatus.pending_youtube ||
       status === MediaPipelineStatus.youtube_failed
     ) {
       await uploadStep(media.id);
       return { id: mediaId, ok: true, step: "youtube" };
+    }
+
+    if (status === MediaPipelineStatus.processing_youtube) {
+      await finalizeYoutubeStep(media.id);
+      return { id: mediaId, ok: true, step: "youtube_processing" };
     }
 
     if (
@@ -139,14 +147,15 @@ async function uploadStep(mediaId: string) {
       description,
     });
 
+    // Keep serving local file until YouTube finishes processing (embeds fail otherwise)
     await prisma.media.update({
       where: { id: mediaId },
       data: {
-        source: "youtube",
-        urlOrPath: watchUrl,
+        source: "upload",
+        urlOrPath: localPath,
         youtubeVideoId: videoId,
         localPath,
-        pipelineStatus: MediaPipelineStatus.pending_archive,
+        pipelineStatus: MediaPipelineStatus.processing_youtube,
         pipelineError: null,
       },
     });
@@ -156,15 +165,62 @@ async function uploadStep(mediaId: string) {
       entity: "Media",
       entityId: mediaId,
       action: "YOUTUBE_UPLOAD",
-      diff: { videoId, watchUrl, publicTokenUnchanged: media.batch.publicToken },
+      diff: {
+        videoId,
+        watchUrl,
+        awaitingProcessing: true,
+        publicTokenUnchanged: media.batch.publicToken,
+      },
     });
 
-    // Archive after a short delay so open documents can switch to YouTube first
+    await finalizeYoutubeStep(mediaId, watchUrl);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await prisma.media.update({
+      where: { id: mediaId },
+      data: {
+        pipelineStatus: MediaPipelineStatus.youtube_failed,
+        pipelineError: message.slice(0, 1000),
+      },
+    });
+  }
+}
+
+async function finalizeYoutubeStep(mediaId: string, knownWatchUrl?: string) {
+  const media = await prisma.media.findUnique({ where: { id: mediaId } });
+  if (!media?.youtubeVideoId) return;
+  if (
+    media.pipelineStatus !== MediaPipelineStatus.processing_youtube &&
+    media.pipelineStatus !== MediaPipelineStatus.uploading_youtube
+  ) {
+    // already finalized
+    if (media.source === "youtube") return;
+  }
+
+  try {
+    const ready = await waitUntilYoutubePlayable(media.youtubeVideoId);
+    const watchUrl =
+      knownWatchUrl ||
+      `https://www.youtube.com/watch?v=${media.youtubeVideoId}`;
+
+    await prisma.media.update({
+      where: { id: mediaId },
+      data: {
+        source: "youtube",
+        urlOrPath: watchUrl,
+        localPath: media.localPath || media.urlOrPath,
+        pipelineStatus: MediaPipelineStatus.pending_archive,
+        pipelineError: ready
+          ? null
+          : "YouTube ещё обрабатывает видео — embed может появиться с задержкой",
+      },
+    });
+
     setTimeout(() => {
       void processMediaPipeline(mediaId).catch((err) => {
         console.error("[media-pipeline:archive]", mediaId, err);
       });
-    }, 20_000);
+    }, 30_000);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await prisma.media.update({

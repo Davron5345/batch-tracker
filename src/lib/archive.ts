@@ -3,19 +3,23 @@ import { access, mkdir, rename, unlink, copyFile, stat } from "fs/promises";
 import path from "path";
 import { constants } from "fs";
 import { ARCHIVE_RETENTION_DAYS } from "@/lib/constants";
+import {
+  archiveAbsDir,
+  resolveArchiveAbs,
+  resolveUploadAbs,
+  uploadsAbsDir,
+} from "@/lib/storage-paths";
 
 export function archiveRootDir() {
-  return path.join(process.cwd(), "storage", "archive");
+  return archiveAbsDir();
 }
 
 export function uploadsRootDir() {
-  return path.join(process.cwd(), "public", "uploads");
+  return uploadsAbsDir();
 }
 
 export function publicUploadToAbs(urlOrPath: string) {
-  // urlOrPath like /uploads/foo.mp4
-  const rel = urlOrPath.replace(/^\//, "");
-  return path.join(process.cwd(), "public", rel);
+  return resolveUploadAbs(urlOrPath);
 }
 
 async function fileExists(p: string) {
@@ -52,7 +56,7 @@ export async function hasFfmpeg(): Promise<boolean> {
 }
 
 /**
- * Compresses video into storage/archive and removes the public upload original.
+ * Compresses video into persistent archive and removes the public upload original.
  * If ffmpeg is missing, copies the file into archive without re-encoding.
  */
 export async function compressAndArchiveVideo(opts: {
@@ -64,13 +68,14 @@ export async function compressAndArchiveVideo(opts: {
     throw new Error(`Локальный файл не найден: ${opts.localPublicPath}`);
   }
 
-  const dir = archiveRootDir();
+  const dir = archiveAbsDir();
   await mkdir(dir, { recursive: true });
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outName = `${opts.mediaId}-${stamp}.mp4`;
   const absOut = path.join(dir, outName);
-  const relativeArchive = path.join("storage", "archive", outName);
+  // Store basename-only path; resolver uses archiveAbsDir()
+  const relativeArchive = outName;
 
   const ffmpegOk = await hasFfmpeg();
   if (ffmpegOk) {
@@ -93,7 +98,6 @@ export async function compressAndArchiveVideo(opts: {
       absOut,
     ]);
   } else {
-    // Fallback: keep original bytes in archive (install ffmpeg for compression)
     await copyFile(absSrc, absOut);
   }
 
@@ -108,13 +112,16 @@ export async function compressAndArchiveVideo(opts: {
 
 export async function deleteArchiveFile(archivePath: string | null | undefined) {
   if (!archivePath) return;
-  const abs = path.isAbsolute(archivePath)
-    ? archivePath
-    : path.join(process.cwd(), archivePath);
+  const abs = resolveArchiveAbs(archivePath);
   try {
     await unlink(abs);
   } catch {
-    // ignore
+    // ignore legacy path under cwd/storage/archive
+    try {
+      await unlink(path.join(process.cwd(), "storage", "archive", path.basename(archivePath)));
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -124,7 +131,7 @@ export function retentionCutoff(days = ARCHIVE_RETENTION_DAYS): Date {
 
 export async function archiveFileSize(archivePath: string) {
   try {
-    const abs = path.join(process.cwd(), archivePath);
+    const abs = resolveArchiveAbs(archivePath);
     const s = await stat(abs);
     return s.size;
   } catch {
@@ -132,10 +139,9 @@ export async function archiveFileSize(archivePath: string) {
   }
 }
 
-/** Move without compression (unused helper for retries). */
 export async function moveToArchiveRaw(mediaId: string, localPublicPath: string) {
   const absSrc = publicUploadToAbs(localPublicPath);
-  const dir = archiveRootDir();
+  const dir = archiveAbsDir();
   await mkdir(dir, { recursive: true });
   const outName = `${mediaId}-${Date.now()}${path.extname(absSrc) || ".mp4"}`;
   const absOut = path.join(dir, outName);
@@ -143,5 +149,5 @@ export async function moveToArchiveRaw(mediaId: string, localPublicPath: string)
     await copyFile(absSrc, absOut);
     await unlink(absSrc);
   });
-  return path.join("storage", "archive", outName);
+  return outName;
 }

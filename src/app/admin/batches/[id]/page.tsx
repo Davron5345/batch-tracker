@@ -27,6 +27,7 @@ const PIPELINE_LABELS: Record<string, string> = {
   none: "",
   pending_youtube: "Смотрите с сервера · ждёт YouTube",
   uploading_youtube: "Смотрите с сервера · загрузка на YouTube…",
+  processing_youtube: "Смотрите с сервера · YouTube обрабатывает…",
   pending_archive: "На YouTube · архивация на сервере",
   archiving: "Сжатие и архив (90 дней)…",
   archived: "На YouTube · локальный архив 90 дней",
@@ -109,6 +110,7 @@ export default function BatchDetailPage() {
       [
         "pending_youtube",
         "uploading_youtube",
+        "processing_youtube",
         "pending_archive",
         "archiving",
       ].includes(m.pipelineStatus || "")

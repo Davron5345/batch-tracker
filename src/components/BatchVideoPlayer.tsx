@@ -38,7 +38,10 @@ export function BatchVideoPlayer({
   uploadingLabel = "В фоне: загрузка на YouTube…",
   failedLabel = "Не удалось загрузить на YouTube",
 }: Props) {
-  const embed = youtubeEmbedUrl(video.urlOrPath, video.youtubeVideoId);
+  const embed =
+    video.source === "youtube"
+      ? youtubeEmbedUrl(video.urlOrPath, video.youtubeVideoId)
+      : null;
   const localSrc = localPlaybackUrl(video);
   const busy = isYoutubePipelineBusy(video.pipelineStatus);
   const failed =

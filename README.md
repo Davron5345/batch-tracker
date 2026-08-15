@@ -40,7 +40,7 @@ npm run dev
 | `CRON_SECRET` | случайная строка для джобы медиа |
 | `DATABASE_URL` | из плагина Postgres (обычно подтягивается сам) |
 
-4. (Рекомендуется) Volume на путь `/app/public/uploads` и `/app/storage`, иначе загруженные файлы пропадут при редеплое.
+4. Volume на путь `/data` (уже используется кодом через `DATA_DIR=/data`), иначе загруженные файлы пропадут при редеплое.
 5. После деплоя: вход `admin@local` / `Admin123!` — сразу смените пароль.
 6. Cron (каждые 10–15 мин): `curl -H "Authorization: Bearer $CRON_SECRET" https://ВАШ-URL/api/jobs/media-pipeline`
 

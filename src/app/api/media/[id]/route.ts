@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit";
 import { deleteArchiveFile } from "@/lib/archive";
+import { isUploadPublicPath, resolveUploadAbs } from "@/lib/storage-paths";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,11 +21,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   await prisma.media.delete({ where: { id } });
 
   const localCandidates = [media.localPath, media.urlOrPath].filter(
-    (p): p is string => Boolean(p && p.startsWith("/uploads/"))
+    isUploadPublicPath
   );
   for (const p of new Set(localCandidates)) {
     try {
-      await unlink(path.join(process.cwd(), "public", p.replace(/^\//, "")));
+      await unlink(resolveUploadAbs(p));
     } catch {
       // ignore
     }

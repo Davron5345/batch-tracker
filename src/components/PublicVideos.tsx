@@ -23,7 +23,8 @@ function needsStatusPoll(videos: BatchVideoItem[]) {
       !hasYt &&
       (v.pipelineStatus === "pending_archive" ||
         v.pipelineStatus === "pending_youtube" ||
-        v.pipelineStatus === "uploading_youtube")
+        v.pipelineStatus === "uploading_youtube" ||
+        v.pipelineStatus === "processing_youtube")
     );
   });
 }
