@@ -8,7 +8,7 @@ type Props = {
   className?: string;
 };
 
-const MIN = 1;
+const MIN = 0.5;
 const MAX = 4;
 const STEP = 0.25;
 
@@ -25,11 +25,7 @@ export function PhotoZoomViewer({ src, alt = "", className }: Props) {
 
   const zoomIn = () => setScale((s) => Math.min(MAX, +(s + STEP).toFixed(2)));
   const zoomOut = () => {
-    setScale((s) => {
-      const next = Math.max(MIN, +(s - STEP).toFixed(2));
-      if (next === MIN) setOffset({ x: 0, y: 0 });
-      return next;
-    });
+    setScale((s) => Math.max(MIN, +(s - STEP).toFixed(2)));
   };
   const reset = () => {
     setScale(1);
@@ -38,7 +34,7 @@ export function PhotoZoomViewer({ src, alt = "", className }: Props) {
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
-      if (scale <= 1) return;
+      if (scale === 1) return;
       e.currentTarget.setPointerCapture(e.pointerId);
       drag.current = {
         active: true,
@@ -81,7 +77,7 @@ export function PhotoZoomViewer({ src, alt = "", className }: Props) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        style={{ cursor: scale > 1 ? "grab" : "default" }}
+        style={{ cursor: scale !== 1 ? "grab" : "default" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
