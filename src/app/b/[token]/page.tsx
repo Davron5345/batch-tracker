@@ -12,6 +12,10 @@ import {
 } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { PublicVideos } from "@/components/PublicVideos";
+import {
+  BatchPassportCard,
+  buildPassportFields,
+} from "@/components/BatchPassportCard";
 
 type Params = { params: Promise<{ token: string }> };
 
@@ -28,6 +32,15 @@ export async function generateMetadata({ params }: Params) {
     title: `${name} · ${t.public.batch} ${batch.batchNumber}`,
     description: pickLocalizedDescription(batch.product, locale) || undefined,
   };
+}
+
+function formatPassportDate(date: Date, locale: "ru" | "uz" | "en") {
+  const d = date;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  if (locale === "en") return `${yyyy}-${mm}-${dd}`;
+  return `${dd}.${mm}.${yyyy}`;
 }
 
 export default async function PublicBatchPage({ params }: Params) {
@@ -50,23 +63,51 @@ export default async function PublicBatchPage({ params }: Params) {
   const unitLabel = batch.product.unit
     ? pickLocalizedName(batch.product.unit, locale)
     : "";
+  const unitValue = batch.product.unit
+    ? `${unitLabel}${
+        batch.product.unit.symbol ? ` (${batch.product.unit.symbol})` : ""
+      }`
+    : "";
   const categoryLabel = batch.product.category
     ? pickLocalizedName(batch.product.category, locale)
     : "";
   const characteristics = parseCharacteristics(batch.characteristics);
   const photos = batch.media.filter((m) => m.type === "photo");
   const videos = batch.media.filter((m) => m.type === "video");
+  const mainPhoto = photos[0] || null;
+  const extraPhotos = photos.slice(1);
+
+  const passportFields = buildPassportFields({
+    productLabel: t.public.passportProduct,
+    productName,
+    skuLabel: t.public.passportSku,
+    sku: batch.product.sku,
+    batchLabel: t.public.passportBatch,
+    batchNumber: batch.batchNumber,
+    dateLabel: t.public.passportDate,
+    manufacturedAt: formatPassportDate(batch.manufacturedAt, locale),
+    categoryLabel: t.public.category,
+    category: categoryLabel || undefined,
+    unitLabel: t.public.unit,
+    unit: unitValue || undefined,
+    characteristics,
+  });
+
+  const idNumber = `${batch.product.sku.replace(/\s+/g, "")}-${batch.batchNumber}`
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .toUpperCase()
+    .slice(0, 24);
 
   return (
     <main
       className="min-h-screen"
       style={{
         background:
-          "radial-gradient(circle at 10% 0%, #d8f3e7 0%, transparent 35%), linear-gradient(180deg, #f7fafc 0%, #eef3f7 100%)",
+          "radial-gradient(circle at 10% 0%, #d4e8f2 0%, transparent 40%), linear-gradient(180deg, #eef3f7 0%, #e4ecf2 100%)",
       }}
     >
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Link href="/scan" className="text-sm font-semibold text-[var(--accent)]">
             {t.public.scanner}
           </Link>
@@ -76,80 +117,31 @@ export default async function PublicBatchPage({ params }: Params) {
           </div>
         </div>
 
-        <header className="card p-6 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-            {batch.product.sku}
-          </p>
-          <h1
-            className="mt-2 text-4xl font-semibold leading-tight"
-            style={{ fontFamily: "Literata, Georgia, serif" }}
-          >
-            {productName}
-          </h1>
-          {productDescription && (
-            <p className="mt-3 text-[var(--muted)]">{productDescription}</p>
-          )}
-          <dl className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                {t.public.batchNumber}
-              </dt>
-              <dd className="mt-1 text-lg font-semibold">{batch.batchNumber}</dd>
-            </div>
-            <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                {t.public.manufacturedAt}
-              </dt>
-              <dd className="mt-1 text-lg font-semibold">
-                {formatDateLocalized(batch.manufacturedAt, locale)}
-              </dd>
-            </div>
-            {categoryLabel && (
-              <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                  {t.public.category}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold">{categoryLabel}</dd>
-              </div>
-            )}
-            {unitLabel && (
-              <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
-                <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                  {t.public.unit}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold">
-                  {unitLabel}
-                  {batch.product.unit?.symbol
-                    ? ` (${batch.product.unit.symbol})`
-                    : ""}
-                </dd>
-              </div>
-            )}
-          </dl>
-        </header>
+        <BatchPassportCard
+          photoUrl={mainPhoto?.urlOrPath}
+          photoAlt={mainPhoto?.caption || productName}
+          titleLeft={t.public.passportTitleLeft}
+          titleRight={t.public.passportTitleRight}
+          fields={passportFields}
+          idNumber={idNumber}
+          watermark={t.public.passportWatermark}
+        />
 
-        {characteristics.length > 0 && (
-          <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">{t.public.characteristics}</h2>
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-              {characteristics.map((item, i) => (
-                <div key={`${item.key}-${i}`} className="rounded-xl bg-[#f8fafc] px-4 py-3">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                    {item.key}
-                  </dt>
-                  <dd className="mt-1 font-medium">{item.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+        {productDescription && (
+          <p className="mt-4 px-1 text-sm text-[var(--muted)]">{productDescription}</p>
         )}
 
-        {photos.length > 0 && (
-          <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">{t.public.photos}</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {photos.map((photo) => (
-                <figure key={photo.id} className="overflow-hidden rounded-xl">
+        {extraPhotos.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+              {t.public.extraPhotos}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {extraPhotos.map((photo) => (
+                <figure
+                  key={photo.id}
+                  className="overflow-hidden rounded-xl border border-[var(--border)] bg-white"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photo.urlOrPath}
@@ -157,7 +149,7 @@ export default async function PublicBatchPage({ params }: Params) {
                     className="aspect-[4/3] w-full object-cover"
                   />
                   {photo.caption && (
-                    <figcaption className="mt-2 text-sm text-[var(--muted)]">
+                    <figcaption className="px-3 py-2 text-sm text-[var(--muted)]">
                       {photo.caption}
                     </figcaption>
                   )}
@@ -183,6 +175,12 @@ export default async function PublicBatchPage({ params }: Params) {
               localPath: video.localPath,
             }))}
           />
+        )}
+
+        {!mainPhoto && characteristics.length === 0 && !productDescription && (
+          <p className="mt-4 text-center text-sm text-[var(--muted)]">
+            {formatDateLocalized(batch.manufacturedAt, locale)}
+          </p>
         )}
       </div>
     </main>

@@ -129,6 +129,14 @@ export type Dictionary = {
     unit: string;
     category: string;
     notFound: string;
+    passportTitleLeft: string;
+    passportTitleRight: string;
+    passportWatermark: string;
+    passportProduct: string;
+    passportSku: string;
+    passportBatch: string;
+    passportDate: string;
+    extraPhotos: string;
   };
   roles: {
     SUPER_ADMIN: string;
@@ -268,6 +276,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       unit: "Ед. изм.",
       category: "Категория",
       notFound: "Партия не найдена",
+      passportTitleLeft: "МАҲСУЛОТ ПАСПОРТИ / ПАСПОРТ МАҲСУЛОТ",
+      passportTitleRight: "ПАСПОРТ ПАРТИИ ПРОДУКТА",
+      passportWatermark: "НЕ ЯВЛЯЕТСЯ ДОКУМЕНТОМ",
+      passportProduct: "МАҲСУЛОТ / ТОВАР",
+      passportSku: "АРТИКУЛ / SKU",
+      passportBatch: "ПАРТИЯ РАҚАМИ / НОМЕР ПАРТИИ",
+      passportDate: "ИШЛАБ ЧИҚАРИЛГАН / ДАТА ИЗГОТОВЛЕНИЯ",
+      extraPhotos: "Дополнительные фото",
     },
     roles: {
       SUPER_ADMIN: "Супер-админ",
@@ -405,6 +421,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       unit: "O‘lchov birligi",
       category: "Kategoriya",
       notFound: "Partiya topilmadi",
+      passportTitleLeft: "MAHSULOT PASPORTI",
+      passportTitleRight: "ПАСПОРТ ПАРТИИ ПРОДУКТА",
+      passportWatermark: "HUJJAT EMAS",
+      passportProduct: "MAHSULOT / ТОВАР",
+      passportSku: "ARTIKUL / SKU",
+      passportBatch: "PARTIYA / НОМЕР ПАРТИИ",
+      passportDate: "ISHLAB CHIQARILGAN / ДАТА ИЗГОТОВЛЕНИЯ",
+      extraPhotos: "Qo‘shimcha foto",
     },
     roles: {
       SUPER_ADMIN: "Super-admin",
@@ -542,6 +566,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       unit: "Unit",
       category: "Category",
       notFound: "Batch not found",
+      passportTitleLeft: "PRODUCT PASSPORT",
+      passportTitleRight: "BATCH PRODUCT PASSPORT",
+      passportWatermark: "NOT AN OFFICIAL DOCUMENT",
+      passportProduct: "PRODUCT / ТОВАР",
+      passportSku: "SKU / АРТИКУЛ",
+      passportBatch: "BATCH NO. / НОМЕР ПАРТИИ",
+      passportDate: "MANUFACTURED / ДАТА ИЗГОТОВЛЕНИЯ",
+      extraPhotos: "Additional photos",
     },
     roles: {
       SUPER_ADMIN: "Super admin",
