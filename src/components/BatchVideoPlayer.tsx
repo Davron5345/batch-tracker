@@ -10,6 +10,8 @@ export type BatchVideoItem = {
   pipelineStatus?: string | null;
   pipelineError?: string | null;
   youtubeVideoId?: string | null;
+  /** Local /uploads path kept until 90-day archive */
+  localPath?: string | null;
 };
 
 type Props = {
@@ -21,23 +23,33 @@ type Props = {
   failedLabel?: string;
 };
 
+function localPlaybackUrl(video: BatchVideoItem): string | null {
+  const candidates = [video.localPath, video.urlOrPath];
+  for (const c of candidates) {
+    if (c && c.startsWith("/uploads/")) return c;
+  }
+  return null;
+}
+
 export function BatchVideoPlayer({
   video,
   title,
   compact,
-  uploadingLabel = "Загрузка на YouTube…",
+  uploadingLabel = "В фоне: загрузка на YouTube…",
   failedLabel = "Не удалось загрузить на YouTube",
 }: Props) {
   const embed = youtubeEmbedUrl(video.urlOrPath, video.youtubeVideoId);
+  const localSrc = localPlaybackUrl(video);
   const busy = isYoutubePipelineBusy(video.pipelineStatus);
   const failed =
     video.pipelineStatus === "youtube_failed" ||
     video.pipelineStatus === "youtube_skipped";
-  const frameClass = compact
-    ? "relative aspect-video w-full overflow-hidden bg-black"
-    : "relative aspect-video w-full overflow-hidden bg-black";
+  const frameClass =
+    "relative aspect-video w-full overflow-hidden bg-black" +
+    (compact ? "" : "");
 
-  if (embed && !busy) {
+  // YouTube ready → switch from our server file immediately
+  if (embed) {
     return (
       <div className={frameClass}>
         <iframe
@@ -51,7 +63,38 @@ export function BatchVideoPlayer({
     );
   }
 
-  if (busy || (!embed && video.source !== "upload")) {
+  // Play from our server right away; snake is only a background-upload hint
+  if (localSrc) {
+    return (
+      <div className={frameClass}>
+        <video
+          src={localSrc}
+          controls
+          className="absolute inset-0 h-full w-full object-contain"
+          playsInline
+          preload="metadata"
+        />
+        {busy && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10">
+            <div className="yt-snake-track" aria-hidden>
+              <span className="yt-snake-bar" />
+              <span className="yt-snake-bar yt-snake-bar--delayed" />
+            </div>
+            <p className="mt-2 px-3 text-center text-[11px] font-semibold tracking-wide text-white/90 drop-shadow">
+              {uploadingLabel}
+            </p>
+          </div>
+        )}
+        {failed && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white">
+            {video.pipelineError || failedLabel}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (busy) {
     return (
       <div className={frameClass} role="status" aria-live="polite">
         <YoutubeSnakeLoading label={uploadingLabel} />
@@ -59,43 +102,9 @@ export function BatchVideoPlayer({
     );
   }
 
-  if (failed && !embed) {
-    return (
-      <div className={frameClass}>
-        {video.source === "upload" && video.urlOrPath ? (
-          <video
-            src={video.urlOrPath}
-            controls
-            className="absolute inset-0 h-full w-full object-contain"
-            playsInline
-          />
-        ) : (
-          <YoutubeSnakeLoading label={failedLabel} staticBar />
-        )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white">
-          {video.pipelineError || failedLabel}
-        </div>
-      </div>
-    );
-  }
-
-  // Local file while waiting / fallback
-  if (video.source === "upload" && video.urlOrPath && !busy) {
-    return (
-      <div className={frameClass}>
-        <video
-          src={video.urlOrPath}
-          controls
-          className="absolute inset-0 h-full w-full object-contain"
-          playsInline
-        />
-      </div>
-    );
-  }
-
   return (
     <div className={frameClass}>
-      <YoutubeSnakeLoading label={uploadingLabel} />
+      <YoutubeSnakeLoading label={failed ? failedLabel : uploadingLabel} staticBar={failed} />
     </div>
   );
 }

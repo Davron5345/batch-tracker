@@ -25,11 +25,11 @@ type MediaItem = {
 
 const PIPELINE_LABELS: Record<string, string> = {
   none: "",
-  pending_youtube: "Ожидает YouTube",
-  uploading_youtube: "Загрузка на YouTube…",
-  pending_archive: "Ожидает архив",
-  archiving: "Сжатие и архив…",
-  archived: "В архиве (90 дней)",
+  pending_youtube: "Смотрите с сервера · ждёт YouTube",
+  uploading_youtube: "Смотрите с сервера · загрузка на YouTube…",
+  pending_archive: "На YouTube · архивация на сервере",
+  archiving: "Сжатие и архив (90 дней)…",
+  archived: "На YouTube · локальный архив 90 дней",
   youtube_failed: "Ошибка YouTube",
   archive_failed: "Ошибка архива",
   youtube_skipped: "YouTube не настроен",

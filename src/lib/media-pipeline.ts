@@ -57,15 +57,16 @@ export async function processMediaPipeline(mediaId: string) {
       return { id: mediaId, skipped: true };
     }
 
-    let status = media.pipelineStatus;
+    const status = media.pipelineStatus;
 
+    // Upload to YouTube first; leave archive for a later job tick so clients
+    // can keep playing /uploads until the UI switches to the YouTube embed.
     if (
       status === MediaPipelineStatus.pending_youtube ||
       status === MediaPipelineStatus.youtube_failed
     ) {
       await uploadStep(media.id);
-      const refreshed = await prisma.media.findUnique({ where: { id: mediaId } });
-      status = refreshed?.pipelineStatus || status;
+      return { id: mediaId, ok: true, step: "youtube" };
     }
 
     if (
@@ -73,9 +74,10 @@ export async function processMediaPipeline(mediaId: string) {
       status === MediaPipelineStatus.archive_failed
     ) {
       await archiveStep(mediaId);
+      return { id: mediaId, ok: true, step: "archive" };
     }
 
-    return { id: mediaId, ok: true };
+    return { id: mediaId, ok: true, step: "noop" };
   } finally {
     inFlight.delete(mediaId);
   }
@@ -156,6 +158,13 @@ async function uploadStep(mediaId: string) {
       action: "YOUTUBE_UPLOAD",
       diff: { videoId, watchUrl, publicTokenUnchanged: media.batch.publicToken },
     });
+
+    // Archive after a short delay so open documents can switch to YouTube first
+    setTimeout(() => {
+      void processMediaPipeline(mediaId).catch((err) => {
+        console.error("[media-pipeline:archive]", mediaId, err);
+      });
+    }, 20_000);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await prisma.media.update({

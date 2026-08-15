@@ -5,7 +5,7 @@ import {
   BatchVideoPlayer,
   type BatchVideoItem,
 } from "@/components/BatchVideoPlayer";
-import { isYoutubePipelineBusy } from "@/lib/utils";
+import { isYoutubePipelineBusy, youtubeEmbedUrl } from "@/lib/utils";
 
 type Props = {
   token: string;
@@ -14,6 +14,19 @@ type Props = {
   uploadingLabel: string;
   failedLabel: string;
 };
+
+function needsStatusPoll(videos: BatchVideoItem[]) {
+  return videos.some((v) => {
+    if (isYoutubePipelineBusy(v.pipelineStatus)) return true;
+    const hasYt = Boolean(youtubeEmbedUrl(v.urlOrPath, v.youtubeVideoId));
+    return (
+      !hasYt &&
+      (v.pipelineStatus === "pending_archive" ||
+        v.pipelineStatus === "pending_youtube" ||
+        v.pipelineStatus === "uploading_youtube")
+    );
+  });
+}
 
 export function PublicVideos({
   token,
@@ -28,10 +41,10 @@ export function PublicVideos({
     setVideos(initialVideos);
   }, [initialVideos]);
 
-  const busy = videos.some((v) => isYoutubePipelineBusy(v.pipelineStatus));
+  const polling = needsStatusPoll(videos);
 
   useEffect(() => {
-    if (!busy) return;
+    if (!polling) return;
 
     const tick = async () => {
       try {
@@ -48,7 +61,7 @@ export function PublicVideos({
 
     const id = setInterval(tick, 4000);
     return () => clearInterval(id);
-  }, [token, busy]);
+  }, [token, polling]);
 
   if (videos.length === 0) return null;
 

@@ -20,6 +20,7 @@ export async function GET(_req: Request, { params }: Params) {
           caption: true,
           pipelineStatus: true,
           youtubeVideoId: true,
+          localPath: true,
         },
       },
     },

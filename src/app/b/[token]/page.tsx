@@ -180,6 +180,7 @@ export default async function PublicBatchPage({ params }: Params) {
               caption: video.caption,
               pipelineStatus: video.pipelineStatus,
               youtubeVideoId: video.youtubeVideoId,
+              localPath: video.localPath,
             }))}
           />
         )}
