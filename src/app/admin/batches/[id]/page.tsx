@@ -371,7 +371,9 @@ export default function BatchDetailPage() {
                 Видео сначала на сервер → в фоне на YouTube → локальная копия сжимается в архив на 90 дней.
               </p>
               <div className="field">
-                <label htmlFor="file">Фото или видео (до 200 МБ)</label>
+                <label htmlFor="file">
+                  Фото или видео (до 200 МБ, сжимается на сервере)
+                </label>
                 <input
                   id="file"
                   type="file"

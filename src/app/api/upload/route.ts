@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { nanoid } from "nanoid";
 import { requirePermission } from "@/lib/api-auth";
-import { uploadsAbsDir, uploadPublicPath } from "@/lib/storage-paths";
+import { uploadPublicPath } from "@/lib/storage-paths";
+import {
+  compressAndSaveImage,
+  compressAndSaveVideo,
+} from "@/lib/media-compress";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Allow time for ffmpeg on large videos (Railway / Node server) */
+export const maxDuration = 300;
 
 const MAX_SIZE = 200 * 1024 * 1024; // 200 MB
 const ALLOWED_IMAGE = new Set([
@@ -61,25 +66,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ext = path.extname(file.name) || (isImage ? ".jpg" : ".mp4");
-  const filename = `${Date.now()}-${nanoid(8)}${ext}`;
-  const dir = uploadsAbsDir();
-  await mkdir(dir, { recursive: true });
+  const baseName = `${Date.now()}-${nanoid(8)}`;
+  const originalExt = path.extname(file.name) || (isImage ? ".jpg" : ".mp4");
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(dir, filename), buffer);
+    const result = isImage
+      ? await compressAndSaveImage(buffer, baseName)
+      : await compressAndSaveVideo(buffer, baseName, originalExt);
+
+    return NextResponse.json({
+      urlOrPath: uploadPublicPath(result.filename),
+      type: isImage ? "photo" : "video",
+      source: "upload",
+      compressed: result.compressed,
+      bytesIn: result.bytesIn,
+      bytesOut: result.bytesOut,
+    });
   } catch (err) {
     console.error("[upload]", err);
     return NextResponse.json(
-      { error: "Не удалось сохранить файл на диск" },
+      { error: "Не удалось сжать и сохранить файл" },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({
-    urlOrPath: uploadPublicPath(filename),
-    type: isImage ? "photo" : "video",
-    source: "upload",
-  });
 }
