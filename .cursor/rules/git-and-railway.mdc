@@ -1,0 +1,13 @@
+---
+description: Always commit/push to GitHub and update Railway after meaningful changes
+alwaysApply: true
+---
+
+# Git + Railway deploy
+
+After finishing meaningful app changes in this project:
+
+1. **Git**: commit relevant files (never `.env` or secrets) and `git push` to `origin` unless the user says not to.
+2. **Railway**: ensure production is updated — push triggers deploy when linked; if only env/config changed, set vars via `railway variable` on service `web` and confirm a new deploy.
+3. Do not ask for permission each time for routine commit/push/Railway updates; the user requested this as the default workflow.
+4. Still never force-push, amend pushed commits, or skip hooks unless explicitly asked.
