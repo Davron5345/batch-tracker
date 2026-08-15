@@ -1,6 +1,7 @@
 "use client";
 
 import { youtubeEmbedUrl, isYoutubePipelineBusy } from "@/lib/utils";
+import { YoutubeStatusIcon } from "@/components/YoutubeStatusIcon";
 
 export type BatchVideoItem = {
   id: string;
@@ -10,14 +11,12 @@ export type BatchVideoItem = {
   pipelineStatus?: string | null;
   pipelineError?: string | null;
   youtubeVideoId?: string | null;
-  /** Local /uploads path kept until 90-day archive */
   localPath?: string | null;
 };
 
 type Props = {
   video: BatchVideoItem;
   title?: string;
-  /** Compact height for admin grid */
   compact?: boolean;
   uploadingLabel?: string;
   failedLabel?: string;
@@ -29,6 +28,19 @@ function localPlaybackUrl(video: BatchVideoItem): string | null {
     if (c && c.startsWith("/uploads/")) return c;
   }
   return null;
+}
+
+function YoutubeBadge({ video }: { video: BatchVideoItem }) {
+  return (
+    <div className="pointer-events-none absolute right-2 top-2 z-20">
+      <YoutubeStatusIcon
+        pipelineStatus={video.pipelineStatus}
+        source={video.source}
+        youtubeVideoId={video.youtubeVideoId}
+        size="md"
+      />
+    </div>
+  );
 }
 
 export function BatchVideoPlayer({
@@ -47,11 +59,10 @@ export function BatchVideoPlayer({
   const failed =
     video.pipelineStatus === "youtube_failed" ||
     video.pipelineStatus === "youtube_skipped";
-  const frameClass =
-    "relative aspect-video w-full overflow-hidden bg-black" +
-    (compact ? "" : "");
+  const frameClass = `relative aspect-video w-full overflow-hidden bg-black${
+    compact ? "" : ""
+  }`;
 
-  // YouTube ready → switch from our server file immediately
   if (embed) {
     return (
       <div className={frameClass}>
@@ -62,11 +73,11 @@ export function BatchVideoPlayer({
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
+        <YoutubeBadge video={video} />
       </div>
     );
   }
 
-  // Play from our server right away; snake is only a background-upload hint
   if (localSrc) {
     return (
       <div className={frameClass}>
@@ -77,68 +88,34 @@ export function BatchVideoPlayer({
           playsInline
           preload="metadata"
         />
-        {busy && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10">
-            <div className="yt-snake-track" aria-hidden>
-              <span className="yt-snake-bar" />
-              <span className="yt-snake-bar yt-snake-bar--delayed" />
-            </div>
-            <p className="mt-2 px-3 text-center text-[11px] font-semibold tracking-wide text-white/90 drop-shadow">
-              {uploadingLabel}
-            </p>
-          </div>
-        )}
+        <YoutubeBadge video={video} />
         {failed && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white">
             {video.pipelineError || failedLabel}
           </div>
         )}
-      </div>
-    );
-  }
-
-  if (busy) {
-    return (
-      <div className={frameClass} role="status" aria-live="polite">
-        <YoutubeSnakeLoading label={uploadingLabel} />
+        {busy && (
+          <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 px-3 text-center text-[11px] font-semibold tracking-wide text-white/90 drop-shadow">
+            {uploadingLabel}
+          </p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className={frameClass}>
-      <YoutubeSnakeLoading label={failed ? failedLabel : uploadingLabel} staticBar={failed} />
-    </div>
-  );
-}
-
-function YoutubeSnakeLoading({
-  label,
-  staticBar,
-}: {
-  label: string;
-  staticBar?: boolean;
-}) {
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f0f]">
-      <div
-        className={`yt-snake-track ${staticBar ? "yt-snake-track--static" : ""}`}
-        aria-hidden
-      >
-        <span className="yt-snake-bar" />
-        <span className="yt-snake-bar yt-snake-bar--delayed" />
+    <div className={frameClass} role="status" aria-live="polite">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0f0f0f]">
+        <YoutubeStatusIcon
+          pipelineStatus={video.pipelineStatus}
+          source={video.source}
+          youtubeVideoId={video.youtubeVideoId}
+          size="lg"
+        />
+        <p className="max-w-[16rem] px-4 text-center text-sm font-medium text-[#aaa]">
+          {failed ? failedLabel : uploadingLabel}
+        </p>
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/branding/youtube.png"
-        alt=""
-        width={120}
-        height={120}
-        className="h-16 w-16 object-contain opacity-95 sm:h-20 sm:w-20"
-      />
-      <p className="mt-4 max-w-[16rem] px-4 text-center text-sm font-medium text-[#aaa]">
-        {label}
-      </p>
     </div>
   );
 }
