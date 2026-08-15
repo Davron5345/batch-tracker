@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useState, type ReactNode } from "react";
-import { ROLE_LABELS, canManageUsers, canWriteProducts } from "@/lib/rbac";
+import { canManageUsers, canWriteProducts } from "@/lib/rbac";
 import type { Role } from "@/lib/constants";
+import { useI18n } from "@/components/I18nProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type NavItem = {
   href: string;
@@ -13,36 +15,6 @@ type NavItem = {
   short: string;
   match: (p: string) => boolean;
 };
-
-const primaryLinks: NavItem[] = [
-  {
-    href: "/admin",
-    label: "Дашборд",
-    short: "Главная",
-    match: (p) => p === "/admin",
-  },
-  {
-    href: "/admin/batches",
-    label: "Партии",
-    short: "Партии",
-    match: (p) => p.startsWith("/admin/batches"),
-  },
-  {
-    href: "/admin/products",
-    label: "Товары",
-    short: "Товары",
-    match: (p) => p.startsWith("/admin/products"),
-  },
-];
-
-const secondaryBase: NavItem[] = [
-  {
-    href: "/admin/audit",
-    label: "Журнал",
-    short: "Журнал",
-    match: (p) => p.startsWith("/admin/audit"),
-  },
-];
 
 function IconHome({ active }: { active?: boolean }) {
   return (
@@ -123,15 +95,48 @@ export function AdminNav({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
-  const secondary = [
-    ...secondaryBase,
+  const primaryLinks: NavItem[] = [
+    {
+      href: "/admin",
+      label: t.nav.dashboard,
+      short: t.nav.dashboard,
+      match: (p) => p === "/admin",
+    },
+    {
+      href: "/admin/batches",
+      label: t.nav.batches,
+      short: t.nav.batches,
+      match: (p) => p.startsWith("/admin/batches"),
+    },
+    {
+      href: "/admin/products",
+      label: t.nav.products,
+      short: t.nav.products,
+      match: (p) => p.startsWith("/admin/products"),
+    },
+  ];
+
+  const secondary: NavItem[] = [
+    {
+      href: "/admin/directories",
+      label: t.nav.directories,
+      short: t.nav.directories,
+      match: (p) => p.startsWith("/admin/directories"),
+    },
+    {
+      href: "/admin/audit",
+      label: t.nav.audit,
+      short: t.nav.audit,
+      match: (p) => p.startsWith("/admin/audit"),
+    },
     ...(canManageUsers(user.role)
       ? [
           {
             href: "/admin/users",
-            label: "Пользователи",
-            short: "Юзеры",
+            label: t.nav.users,
+            short: t.nav.users,
             match: (p: string) => p.startsWith("/admin/users"),
           } satisfies NavItem,
         ]
@@ -154,15 +159,9 @@ export function AdminNav({
     };
   }, [open]);
 
-  function NavLinks({
-    items,
-    stacked,
-  }: {
-    items: NavItem[];
-    stacked?: boolean;
-  }) {
+  function NavLinks({ items }: { items: NavItem[] }) {
     return (
-      <nav className={stacked ? "flex flex-col gap-1" : "flex flex-col gap-1"}>
+      <nav className="flex flex-col gap-1">
         {items.map((item) => {
           const active = item.match(pathname);
           return (
@@ -187,26 +186,27 @@ export function AdminNav({
   function UserBlock() {
     return (
       <div className="space-y-3 border-t border-[var(--border)] pt-4 text-sm">
+        <LanguageSwitcher />
         <div>
           <div className="font-semibold">{user.name || user.email}</div>
-          <div className="text-[var(--muted)]">{ROLE_LABELS[user.role]}</div>
+          <div className="text-[var(--muted)]">{t.roles[user.role]}</div>
         </div>
         {!canWriteProducts(user.role) && (
-          <p className="text-xs text-[var(--muted)]">Права ограничены ролью</p>
+          <p className="text-xs text-[var(--muted)]">VIEWER</p>
         )}
         <Link
           href="/scan"
           onClick={() => setOpen(false)}
           className="btn btn-secondary w-full"
         >
-          Сканер QR
+          {t.nav.scan}
         </Link>
         <button
           type="button"
           className="btn btn-secondary w-full"
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
-          Выйти
+          {t.nav.logout}
         </button>
       </div>
     );
@@ -214,25 +214,24 @@ export function AdminNav({
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-[var(--border)] bg-white p-4 lg:flex lg:min-h-screen">
         <div>
           <div
             className="text-xl font-semibold tracking-tight"
             style={{ fontFamily: "Literata, Georgia, serif" }}
           >
-            Партии
+            {t.appName}
           </div>
-          <p className="mt-1 text-sm text-[var(--muted)]">Учёт товаров и QR</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t.tagline}</p>
         </div>
-        <NavLinks items={allLinks} stacked />
+        <NavLinks items={allLinks} />
         <div className="mt-auto">
           <UserBlock />
         </div>
       </aside>
 
-      {/* Mobile / tablet top bar */}
-      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/95 backdrop-blur lg:hidden"
+      <header
+        className="sticky top-0 z-40 border-b border-[var(--border)] bg-white/95 backdrop-blur lg:hidden"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="flex h-14 items-center justify-between gap-3 px-4">
@@ -241,31 +240,31 @@ export function AdminNav({
               className="truncate text-lg font-semibold"
               style={{ fontFamily: "Literata, Georgia, serif" }}
             >
-              Партии
+              {t.appName}
             </div>
-            <p className="truncate text-xs text-[var(--muted)]">
-              {ROLE_LABELS[user.role]}
-            </p>
+            <p className="truncate text-xs text-[var(--muted)]">{t.roles[user.role]}</p>
           </div>
-          <button
-            type="button"
-            className="btn btn-secondary !min-h-11 !px-3"
-            aria-label={open ? "Закрыть меню" : "Открыть меню"}
-            aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? <IconClose /> : <IconMenu />}
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher compact />
+            <button
+              type="button"
+              className="btn btn-secondary !min-h-11 !px-3"
+              aria-label={open ? t.common.cancel : t.nav.menu}
+              aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? <IconClose /> : <IconMenu />}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Drawer overlay */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <button
             type="button"
             className="absolute inset-0 bg-black/35"
-            aria-label="Закрыть"
+            aria-label={t.common.cancel}
             onClick={() => setOpen(false)}
           />
           <div
@@ -277,18 +276,18 @@ export function AdminNav({
                 className="text-lg font-semibold"
                 style={{ fontFamily: "Literata, Georgia, serif" }}
               >
-                Меню
+                {t.nav.menu}
               </div>
               <button
                 type="button"
                 className="btn btn-secondary !min-h-11 !px-3"
-                aria-label="Закрыть"
+                aria-label={t.common.cancel}
                 onClick={() => setOpen(false)}
               >
                 <IconClose />
               </button>
             </div>
-            <NavLinks items={allLinks} stacked />
+            <NavLinks items={allLinks} />
             <div className="mt-auto">
               <UserBlock />
             </div>
@@ -296,11 +295,10 @@ export function AdminNav({
         </div>
       )}
 
-      {/* Mobile / tablet bottom tabs */}
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-white/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        aria-label="Основная навигация"
+        aria-label="Main"
       >
         <div className="mx-auto grid max-w-lg grid-cols-4">
           {primaryLinks.map((item) => {
@@ -315,7 +313,7 @@ export function AdminNav({
                 }`}
               >
                 <Icon active={active} />
-                <span>{item.short}</span>
+                <span className="truncate">{item.short}</span>
               </Link>
             );
           })}
@@ -327,7 +325,7 @@ export function AdminNav({
             onClick={() => setOpen(true)}
           >
             <IconMenu />
-            <span>Ещё</span>
+            <span>{t.nav.more}</span>
           </button>
         </div>
       </nav>

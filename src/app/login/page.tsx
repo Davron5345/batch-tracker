@@ -1,14 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useI18n } from "@/components/I18nProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/admin";
+  const { t } = useI18n();
   const [email, setEmail] = useState("admin@local");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +27,7 @@ function LoginForm() {
     });
     setLoading(false);
     if (result?.error) {
-      setError("Неверный email или пароль");
+      setError(t.login.invalid);
       return;
     }
     router.push(callbackUrl);
@@ -34,17 +36,20 @@ function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="card mx-auto w-full max-w-md space-y-4 p-6 shadow-sm">
-      <div>
-        <h1
-          className="text-2xl font-semibold"
-          style={{ fontFamily: "Literata, Georgia, serif" }}
-        >
-          Вход
-        </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">Админка учёта партий</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1
+            className="text-2xl font-semibold"
+            style={{ fontFamily: "Literata, Georgia, serif" }}
+          >
+            {t.login.title}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t.login.subtitle}</p>
+        </div>
+        <LanguageSwitcher compact />
       </div>
       <div className="field">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="email">{t.login.email}</label>
         <input
           id="email"
           type="email"
@@ -55,7 +60,7 @@ function LoginForm() {
         />
       </div>
       <div className="field">
-        <label htmlFor="password">Пароль</label>
+        <label htmlFor="password">{t.login.password}</label>
         <input
           id="password"
           type="password"
@@ -67,13 +72,14 @@ function LoginForm() {
       </div>
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-        {loading ? "Вход…" : "Войти"}
+        {loading ? t.login.submitting : t.login.submit}
       </button>
     </form>
   );
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
   return (
     <main
       className="flex min-h-screen items-center px-4 py-10"
@@ -82,7 +88,7 @@ export default function LoginPage() {
           "radial-gradient(circle at 20% 20%, #d8f3e7 0%, transparent 40%), #f4f6f8",
       }}
     >
-      <Suspense fallback={<div className="mx-auto text-[var(--muted)]">Загрузка…</div>}>
+      <Suspense fallback={<div className="mx-auto text-[var(--muted)]">{t.common.loading}</div>}>
         <LoginForm />
       </Suspense>
     </main>

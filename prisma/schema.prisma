@@ -18,14 +18,39 @@ model User {
   auditLogs    AuditLog[]
 }
 
+model UnitOfMeasure {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  symbol    String?
+  nameRu    String
+  nameUz    String
+  nameEn    String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  sku         String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  batches     Batch[]
+  id             String         @id @default(cuid())
+  /// Kept in sync with nameRu for compatibility
+  name           String
+  nameRu         String         @default("")
+  nameUz         String         @default("")
+  nameEn         String         @default("")
+  sku            String         @unique
+  description    String?
+  descriptionRu  String?
+  descriptionUz  String?
+  descriptionEn  String?
+  unitId         String?
+  unit           UnitOfMeasure? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  batches        Batch[]
+
+  @@index([unitId])
 }
 
 model Batch {

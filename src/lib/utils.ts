@@ -55,8 +55,16 @@ export function youtubeEmbedUrl(url: string): string | null {
 }
 
 export function formatDateRu(date: Date | string): string {
+  return formatDateLocalized(date, "ru");
+}
+
+export function formatDateLocalized(
+  date: Date | string,
+  locale: "ru" | "uz" | "en" = "ru"
+): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("ru-RU", {
+  const tag = locale === "uz" ? "uz-UZ" : locale === "en" ? "en-GB" : "ru-RU";
+  return d.toLocaleDateString(tag, {
     day: "2-digit",
     month: "long",
     year: "numeric",

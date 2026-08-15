@@ -3,12 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canWriteProducts } from "@/lib/rbac";
 import { formatDateTimeRu } from "@/lib/utils";
+import { getServerDictionary, pickLocalizedName } from "@/lib/i18n";
 
 export default async function ProductsPage() {
   const session = await auth();
   const canWrite = canWriteProducts(session!.user.role);
+  const { t, locale } = await getServerDictionary();
   const products = await prisma.product.findMany({
-    include: { _count: { select: { batches: true } } },
+    include: { _count: { select: { batches: true } }, unit: true },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -16,19 +18,19 @@ export default async function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="admin-page-title">Товары</h1>
-          <p className="mt-1 text-[var(--muted)]">Карточки продукции</p>
+          <h1 className="admin-page-title">{t.products.title}</h1>
+          <p className="mt-1 text-[var(--muted)]">{t.products.subtitle}</p>
         </div>
         {canWrite && (
           <Link href="/admin/products/new" className="btn btn-primary w-full sm:w-auto">
-            Добавить товар
+            {t.products.add}
           </Link>
         )}
       </div>
 
       <div className="mobile-card-list md:hidden">
         {products.length === 0 && (
-          <div className="mobile-card text-[var(--muted)]">Товаров пока нет</div>
+          <div className="mobile-card text-[var(--muted)]">{t.products.empty}</div>
         )}
         {products.map((product) => (
           <Link
@@ -36,16 +38,16 @@ export default async function ProductsPage() {
             href={`/admin/products/${product.id}`}
             className="mobile-card block"
           >
-            <div className="card-title">{product.name}</div>
-            <div className="mobile-card-meta">Артикул {product.sku}</div>
-            {product.description && (
-              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted)]">
-                {product.description}
-              </p>
-            )}
+            <div className="card-title">{pickLocalizedName(product, locale)}</div>
+            <div className="mobile-card-meta">
+              {t.products.sku} {product.sku}
+              {product.unit
+                ? ` · ${pickLocalizedName(product.unit, locale)}`
+                : ""}
+            </div>
             <div className="mobile-card-row">
               <span className="text-sm text-[var(--muted)]">
-                Партий: {product._count.batches}
+                {t.products.batchesCount}: {product._count.batches}
               </span>
               <span className="text-xs text-[var(--muted)]">
                 {formatDateTimeRu(product.updatedAt)}
@@ -60,17 +62,17 @@ export default async function ProductsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Название</th>
-                <th>Артикул</th>
-                <th>Партий</th>
-                <th>Обновлён</th>
+                <th>{t.products.nameRu}</th>
+                <th>{t.products.sku}</th>
+                <th>{t.products.unit}</th>
+                <th>{t.products.batchesCount}</th>
               </tr>
             </thead>
             <tbody>
               {products.length === 0 && (
                 <tr>
                   <td colSpan={4} className="text-[var(--muted)]">
-                    Товаров пока нет
+                    {t.products.empty}
                   </td>
                 </tr>
               )}
@@ -81,17 +83,21 @@ export default async function ProductsPage() {
                       href={`/admin/products/${product.id}`}
                       className="font-semibold text-[var(--accent)] hover:underline"
                     >
-                      {product.name}
+                      {pickLocalizedName(product, locale)}
                     </Link>
-                    {product.description && (
-                      <div className="mt-1 line-clamp-1 text-sm text-[var(--muted)]">
-                        {product.description}
-                      </div>
-                    )}
+                    <div className="mt-1 text-xs text-[var(--muted)]">
+                      RU: {product.nameRu || product.name}
+                      {product.nameUz ? ` · UZ: ${product.nameUz}` : ""}
+                      {product.nameEn ? ` · EN: ${product.nameEn}` : ""}
+                    </div>
                   </td>
                   <td>{product.sku}</td>
+                  <td>
+                    {product.unit
+                      ? pickLocalizedName(product.unit, locale)
+                      : "—"}
+                  </td>
                   <td>{product._count.batches}</td>
-                  <td>{formatDateTimeRu(product.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>

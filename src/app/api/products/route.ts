@@ -3,6 +3,38 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit";
 
+function parseProductBody(body: Record<string, unknown>) {
+  const nameRu = String(body.nameRu || body.name || "").trim();
+  const nameUz = String(body.nameUz || "").trim();
+  const nameEn = String(body.nameEn || "").trim();
+  const sku = String(body.sku || "").trim();
+  const descriptionRu = body.descriptionRu
+    ? String(body.descriptionRu).trim()
+    : body.description
+      ? String(body.description).trim()
+      : null;
+  const descriptionUz = body.descriptionUz
+    ? String(body.descriptionUz).trim()
+    : null;
+  const descriptionEn = body.descriptionEn
+    ? String(body.descriptionEn).trim()
+    : null;
+  const unitId = body.unitId ? String(body.unitId).trim() : null;
+
+  return {
+    name: nameRu,
+    nameRu,
+    nameUz,
+    nameEn,
+    sku,
+    description: descriptionRu,
+    descriptionRu,
+    descriptionUz,
+    descriptionEn,
+    unitId: unitId || null,
+  };
+}
+
 export async function GET(req: NextRequest) {
   const authz = await requirePermission("products:read");
   if (authz.error) return authz.error;
@@ -12,13 +44,20 @@ export async function GET(req: NextRequest) {
     where: q
       ? {
           OR: [
-            { name: { contains: q } },
-            { sku: { contains: q } },
-            { description: { contains: q } },
+            { name: { contains: q, mode: "insensitive" } },
+            { nameRu: { contains: q, mode: "insensitive" } },
+            { nameUz: { contains: q, mode: "insensitive" } },
+            { nameEn: { contains: q, mode: "insensitive" } },
+            { sku: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
+            { descriptionRu: { contains: q, mode: "insensitive" } },
           ],
         }
       : undefined,
-    include: { _count: { select: { batches: true } } },
+    include: {
+      _count: { select: { batches: true } },
+      unit: true,
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -30,27 +69,26 @@ export async function POST(req: NextRequest) {
   if (authz.error) return authz.error;
 
   const body = await req.json();
-  const name = String(body.name || "").trim();
-  const sku = String(body.sku || "").trim();
-  const description = body.description ? String(body.description).trim() : null;
+  const data = parseProductBody(body);
 
-  if (!name || !sku) {
+  if (!data.nameRu || !data.sku) {
     return NextResponse.json(
-      { error: "Название и артикул обязательны" },
+      { error: "Название (RU) и артикул обязательны" },
       { status: 400 }
     );
   }
 
   try {
     const product = await prisma.product.create({
-      data: { name, sku, description },
+      data,
+      include: { unit: true },
     });
     await writeAuditLog({
       userId: authz.session!.user.id,
       entity: "Product",
       entityId: product.id,
       action: "CREATE",
-      diff: { name, sku, description },
+      diff: data,
     });
     return NextResponse.json(product, { status: 201 });
   } catch {

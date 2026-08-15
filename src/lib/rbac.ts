@@ -6,16 +6,19 @@ export type Permission =
   | "batches:read"
   | "batches:write"
   | "media:write"
+  | "directories:read"
+  | "directories:write"
   | "users:manage"
   | "audit:read";
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  VIEWER: ["products:read", "batches:read", "audit:read"],
+  VIEWER: ["products:read", "batches:read", "directories:read", "audit:read"],
   EDITOR: [
     "products:read",
     "batches:read",
     "batches:write",
     "media:write",
+    "directories:read",
     "audit:read",
   ],
   ADMIN: [
@@ -24,6 +27,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "batches:read",
     "batches:write",
     "media:write",
+    "directories:read",
+    "directories:write",
     "audit:read",
   ],
   SUPER_ADMIN: [
@@ -32,6 +37,8 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "batches:read",
     "batches:write",
     "media:write",
+    "directories:read",
+    "directories:write",
     "users:manage",
     "audit:read",
   ],
@@ -48,6 +55,10 @@ export function canWriteProducts(role: Role | string): boolean {
 
 export function canWriteBatches(role: Role | string): boolean {
   return hasPermission(role, "batches:write");
+}
+
+export function canWriteDirectories(role: Role | string): boolean {
+  return hasPermission(role, "directories:write");
 }
 
 export function canManageUsers(role: Role | string): boolean {

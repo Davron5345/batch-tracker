@@ -5,12 +5,31 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "next-auth/react";
 import { formatDateRu } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
+import { pickLocalizedName } from "@/lib/i18n/localize";
+
+type Unit = {
+  id: string;
+  code: string;
+  symbol: string | null;
+  nameRu: string;
+  nameUz: string;
+  nameEn: string;
+};
 
 type Product = {
   id: string;
   name: string;
+  nameRu: string;
+  nameUz: string;
+  nameEn: string;
   sku: string;
   description: string | null;
+  descriptionRu: string | null;
+  descriptionUz: string | null;
+  descriptionEn: string | null;
+  unitId: string | null;
+  unit: Unit | null;
   batches: Array<{
     id: string;
     batchNumber: string;
@@ -23,10 +42,17 @@ type Product = {
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [product, setProduct] = useState<Product | null>(null);
-  const [name, setName] = useState("");
   const [sku, setSku] = useState("");
-  const [description, setDescription] = useState("");
+  const [nameRu, setNameRu] = useState("");
+  const [nameUz, setNameUz] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [descriptionRu, setDescriptionRu] = useState("");
+  const [descriptionUz, setDescriptionUz] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [unitId, setUnitId] = useState("");
+  const [units, setUnits] = useState<Unit[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [canWrite, setCanWrite] = useState(false);
@@ -37,19 +63,28 @@ export default function ProductDetailPage() {
       const role = session?.user?.role;
       setCanWrite(role === "ADMIN" || role === "SUPER_ADMIN");
 
-      const productRes = await fetch(`/api/products/${id}`);
+      const [productRes, unitsRes] = await Promise.all([
+        fetch(`/api/products/${id}`),
+        fetch("/api/units?active=1"),
+      ]);
       if (!productRes.ok) {
-        setError("Товар не найден");
+        setError(t.common.notFound);
         return;
       }
       const data = await productRes.json();
       setProduct(data);
-      setName(data.name);
       setSku(data.sku);
-      setDescription(data.description || "");
+      setNameRu(data.nameRu || data.name || "");
+      setNameUz(data.nameUz || "");
+      setNameEn(data.nameEn || "");
+      setDescriptionRu(data.descriptionRu || data.description || "");
+      setDescriptionUz(data.descriptionUz || "");
+      setDescriptionEn(data.descriptionEn || "");
+      setUnitId(data.unitId || "");
+      if (unitsRes.ok) setUnits(await unitsRes.json());
     }
     load();
-  }, [id]);
+  }, [id, t.common.notFound]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,12 +93,21 @@ export default function ProductDetailPage() {
     const res = await fetch(`/api/products/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, sku, description }),
+      body: JSON.stringify({
+        sku,
+        nameRu,
+        nameUz,
+        nameEn,
+        descriptionRu,
+        descriptionUz,
+        descriptionEn,
+        unitId: unitId || null,
+      }),
     });
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError(data.error || "Ошибка сохранения");
+      setError(data.error || t.common.error);
       return;
     }
     setProduct((prev) => (prev ? { ...prev, ...data } : prev));
@@ -71,11 +115,11 @@ export default function ProductDetailPage() {
   }
 
   async function onDelete() {
-    if (!confirm("Удалить товар и все его партии?")) return;
+    if (!confirm(t.products.deleteConfirm)) return;
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Ошибка удаления");
+      setError(data.error || t.common.error);
       return;
     }
     router.push("/admin/products");
@@ -83,7 +127,7 @@ export default function ProductDetailPage() {
   }
 
   if (!product && !error) {
-    return <p className="text-[var(--muted)]">Загрузка…</p>;
+    return <p className="text-[var(--muted)]">{t.common.loading}</p>;
   }
   if (!product) {
     return <p className="text-[var(--danger)]">{error}</p>;
@@ -93,28 +137,16 @@ export default function ProductDetailPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <Link href="/admin/products" className="text-sm text-[var(--accent)] hover:underline">
-          ← К списку товаров
+          ← {t.products.backToList}
         </Link>
-        <h1
-          className="admin-page-title mt-2"
-        >
-          {product.name}
+        <h1 className="admin-page-title mt-2">
+          {pickLocalizedName(product, locale)}
         </h1>
       </div>
 
-      <form onSubmit={onSubmit} className="card space-y-4 p-5">
+      <form onSubmit={onSubmit} className="card space-y-4 p-4 sm:p-5">
         <div className="field">
-          <label htmlFor="name">Название</label>
-          <input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="sku">Артикул</label>
+          <label htmlFor="sku">{t.products.sku}</label>
           <input
             id="sku"
             value={sku}
@@ -124,72 +156,121 @@ export default function ProductDetailPage() {
           />
         </div>
         <div className="field">
-          <label htmlFor="description">Описание</label>
-          <textarea
-            id="description"
-            rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+          <label htmlFor="unitId">{t.products.unit}</label>
+          <select
+            id="unitId"
+            value={unitId}
+            onChange={(e) => setUnitId(e.target.value)}
             disabled={!canWrite}
-          />
+          >
+            <option value="">{t.products.unitNone}</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {pickLocalizedName(u, locale)}
+                {u.symbol ? ` (${u.symbol})` : ""} · {u.code}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <div className="border-t border-[var(--border)] pt-4">
+          <h2 className="mb-3 font-semibold">{t.products.langSection}</h2>
+          <div className="space-y-3">
+            <div className="field">
+              <label htmlFor="nameRu">{t.products.nameRu}</label>
+              <input
+                id="nameRu"
+                value={nameRu}
+                onChange={(e) => setNameRu(e.target.value)}
+                required
+                disabled={!canWrite}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="descRu">{t.products.descRu}</label>
+              <textarea
+                id="descRu"
+                rows={2}
+                value={descriptionRu}
+                onChange={(e) => setDescriptionRu(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="nameUz">{t.products.nameUz}</label>
+              <input
+                id="nameUz"
+                value={nameUz}
+                onChange={(e) => setNameUz(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="descUz">{t.products.descUz}</label>
+              <textarea
+                id="descUz"
+                rows={2}
+                value={descriptionUz}
+                onChange={(e) => setDescriptionUz(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="nameEn">{t.products.nameEn}</label>
+              <input
+                id="nameEn"
+                value={nameEn}
+                onChange={(e) => setNameEn(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="descEn">{t.products.descEn}</label>
+              <textarea
+                id="descEn"
+                rows={2}
+                value={descriptionEn}
+                onChange={(e) => setDescriptionEn(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+          </div>
+        </div>
+
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         {canWrite && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? "Сохранение…" : "Сохранить"}
+              {loading ? t.common.loading : t.common.save}
             </button>
             <button type="button" className="btn btn-danger" onClick={onDelete}>
-              Удалить
+              {t.common.delete}
             </button>
           </div>
         )}
       </form>
 
-      <div className="card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-          <h2 className="font-semibold">Партии товара</h2>
-          <Link
-            href={`/admin/batches/new?productId=${product.id}`}
-            className="btn btn-secondary"
-          >
-            Новая партия
-          </Link>
-        </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Номер</th>
-              <th>Дата</th>
-              <th>Медиа</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {product.batches.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-[var(--muted)]">
-                  Партий нет
-                </td>
-              </tr>
-            )}
+      <div className="card p-4 sm:p-5">
+        <h2 className="mb-3 font-semibold">{t.batches.title}</h2>
+        {product.batches.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">{t.batches.empty}</p>
+        ) : (
+          <ul className="space-y-2">
             {product.batches.map((batch) => (
-              <tr key={batch.id}>
-                <td>
-                  <Link
-                    href={`/admin/batches/${batch.id}`}
-                    className="font-semibold text-[var(--accent)] hover:underline"
-                  >
-                    {batch.batchNumber}
-                  </Link>
-                </td>
-                <td>{formatDateRu(batch.manufacturedAt)}</td>
-                <td>{batch._count.media}</td>
-                <td>{batch.status === "ACTIVE" ? "Активна" : "Архив"}</td>
-              </tr>
+              <li key={batch.id}>
+                <Link
+                  href={`/admin/batches/${batch.id}`}
+                  className="font-semibold text-[var(--accent)] hover:underline"
+                >
+                  {batch.batchNumber}
+                </Link>
+                <span className="ml-2 text-sm text-[var(--muted)]">
+                  {formatDateRu(batch.manufacturedAt)} · {batch._count.media} {t.batches.media}
+                </span>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        )}
       </div>
     </div>
   );

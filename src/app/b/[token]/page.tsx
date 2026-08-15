@@ -2,32 +2,41 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
-  formatDateRu,
+  formatDateLocalized,
   parseCharacteristics,
   youtubeEmbedUrl,
 } from "@/lib/utils";
+import {
+  getServerDictionary,
+  pickLocalizedDescription,
+  pickLocalizedName,
+} from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type Params = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: Params) {
   const { token } = await params;
+  const { locale, t } = await getServerDictionary();
   const batch = await prisma.batch.findUnique({
     where: { publicToken: token },
     include: { product: true },
   });
-  if (!batch) return { title: "Партия не найдена" };
+  if (!batch) return { title: t.public.notFound };
+  const name = pickLocalizedName(batch.product, locale);
   return {
-    title: `${batch.product.name} · партия ${batch.batchNumber}`,
-    description: batch.product.description || undefined,
+    title: `${name} · ${t.public.batch} ${batch.batchNumber}`,
+    description: pickLocalizedDescription(batch.product, locale) || undefined,
   };
 }
 
 export default async function PublicBatchPage({ params }: Params) {
   const { token } = await params;
+  const { locale, t } = await getServerDictionary();
   const batch = await prisma.batch.findUnique({
     where: { publicToken: token },
     include: {
-      product: true,
+      product: { include: { unit: true } },
       media: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
     },
   });
@@ -36,6 +45,11 @@ export default async function PublicBatchPage({ params }: Params) {
     notFound();
   }
 
+  const productName = pickLocalizedName(batch.product, locale);
+  const productDescription = pickLocalizedDescription(batch.product, locale);
+  const unitLabel = batch.product.unit
+    ? pickLocalizedName(batch.product.unit, locale)
+    : "";
   const characteristics = parseCharacteristics(batch.characteristics);
   const photos = batch.media.filter((m) => m.type === "photo");
   const videos = batch.media.filter((m) => m.type === "video");
@@ -49,11 +63,14 @@ export default async function PublicBatchPage({ params }: Params) {
       }}
     >
       <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-        <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link href="/scan" className="text-sm font-semibold text-[var(--accent)]">
-            Сканер QR
+            {t.public.scanner}
           </Link>
-          <span className="badge">Партия</span>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher compact />
+            <span className="badge">{t.public.batch}</span>
+          </div>
         </div>
 
         <header className="card p-6 sm:p-8">
@@ -64,32 +81,45 @@ export default async function PublicBatchPage({ params }: Params) {
             className="mt-2 text-4xl font-semibold leading-tight"
             style={{ fontFamily: "Literata, Georgia, serif" }}
           >
-            {batch.product.name}
+            {productName}
           </h1>
-          {batch.product.description && (
-            <p className="mt-3 text-[var(--muted)]">{batch.product.description}</p>
+          {productDescription && (
+            <p className="mt-3 text-[var(--muted)]">{productDescription}</p>
           )}
           <dl className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
               <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                Номер партии
+                {t.public.batchNumber}
               </dt>
               <dd className="mt-1 text-lg font-semibold">{batch.batchNumber}</dd>
             </div>
             <div className="rounded-xl bg-[#f8fafc] px-4 py-3">
               <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                Дата изготовления
+                {t.public.manufacturedAt}
               </dt>
               <dd className="mt-1 text-lg font-semibold">
-                {formatDateRu(batch.manufacturedAt)}
+                {formatDateLocalized(batch.manufacturedAt, locale)}
               </dd>
             </div>
+            {unitLabel && (
+              <div className="rounded-xl bg-[#f8fafc] px-4 py-3 sm:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  {t.public.unit}
+                </dt>
+                <dd className="mt-1 text-lg font-semibold">
+                  {unitLabel}
+                  {batch.product.unit?.symbol
+                    ? ` (${batch.product.unit.symbol})`
+                    : ""}
+                </dd>
+              </div>
+            )}
           </dl>
         </header>
 
         {characteristics.length > 0 && (
           <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">Характеристики</h2>
+            <h2 className="text-lg font-semibold">{t.public.characteristics}</h2>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               {characteristics.map((item, i) => (
                 <div key={`${item.key}-${i}`} className="rounded-xl bg-[#f8fafc] px-4 py-3">
@@ -105,14 +135,14 @@ export default async function PublicBatchPage({ params }: Params) {
 
         {photos.length > 0 && (
           <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">Фото</h2>
+            <h2 className="text-lg font-semibold">{t.public.photos}</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {photos.map((photo) => (
                 <figure key={photo.id} className="overflow-hidden rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photo.urlOrPath}
-                    alt={photo.caption || batch.product.name}
+                    alt={photo.caption || productName}
                     className="aspect-[4/3] w-full object-cover"
                   />
                   {photo.caption && (
@@ -128,7 +158,7 @@ export default async function PublicBatchPage({ params }: Params) {
 
         {videos.length > 0 && (
           <section className="card mt-4 p-6">
-            <h2 className="text-lg font-semibold">Видео</h2>
+            <h2 className="text-lg font-semibold">{t.public.videos}</h2>
             <div className="mt-4 space-y-4">
               {videos.map((video) => (
                 <div key={video.id} className="overflow-hidden rounded-xl bg-black">
