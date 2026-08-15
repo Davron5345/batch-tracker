@@ -728,10 +728,8 @@ button {
 }
 
 .yt-glow__icon--bright {
-  filter: none;
-  opacity: 1;
-  drop-shadow: none;
   filter: drop-shadow(0 0 6px rgba(255, 0, 50, 0.35));
+  opacity: 1;
 }
 
 .yt-glow--ready {
