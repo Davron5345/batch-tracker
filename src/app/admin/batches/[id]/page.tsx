@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getSession } from "next-auth/react";
 import { CharacteristicsEditor } from "@/components/CharacteristicsEditor";
 import { BatchVideoPlayer } from "@/components/BatchVideoPlayer";
+import { PhotoZoomViewer } from "@/components/PhotoZoomViewer";
 import {
   parseCharacteristics,
   type Characteristic,
@@ -418,8 +419,10 @@ export default function BatchDetailPage() {
             {batch.media.map((item) => (
               <div key={item.id} className="overflow-hidden rounded-xl border border-[var(--border)]">
                 {item.type === "photo" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.urlOrPath} alt={item.caption || ""} className="h-48 w-full object-cover" />
+                  <PhotoZoomViewer
+                    src={item.urlOrPath}
+                    alt={item.caption || ""}
+                  />
                 ) : (
                   <BatchVideoPlayer video={item} compact />
                 )}

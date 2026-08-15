@@ -542,3 +542,71 @@ button {
     font-size: 0.58rem;
   }
 }
+
+/* Photo zoom controls (admin media preview) */
+.photo-zoom {
+  position: relative;
+  background: #0f1419;
+}
+
+.photo-zoom__stage {
+  height: 12rem;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.photo-zoom__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center center;
+  transition: transform 0.08s ease-out;
+  pointer-events: none;
+}
+
+.photo-zoom__controls {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: rgba(15, 20, 25, 0.72);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.photo-zoom__btn {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0 0.45rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photo-zoom__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.photo-zoom__btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.photo-zoom__btn--label {
+  min-width: 2.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
