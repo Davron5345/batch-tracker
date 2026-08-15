@@ -106,7 +106,7 @@ export default async function PublicBatchPage({ params }: Params) {
           "radial-gradient(circle at 10% 0%, #d4e8f2 0%, transparent 40%), linear-gradient(180deg, #eef3f7 0%, #e4ecf2 100%)",
       }}
     >
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-xl px-3 py-6 sm:max-w-2xl sm:px-4 sm:py-12">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Link href="/scan" className="text-sm font-semibold text-[var(--accent)]">
             {t.public.scanner}
@@ -120,10 +120,12 @@ export default async function PublicBatchPage({ params }: Params) {
         <BatchPassportCard
           photoUrl={mainPhoto?.urlOrPath}
           photoAlt={mainPhoto?.caption || productName}
-          titleLeft={t.public.passportTitleLeft}
-          titleRight={t.public.passportTitleRight}
+          countryLine={t.public.passportCountry}
+          docTitle={t.public.passportDocTitle}
+          docSubtitle={t.public.passportDocSubtitle}
           fields={passportFields}
           idNumber={idNumber}
+          idLabel={t.public.passportIdLabel}
           watermark={t.public.passportWatermark}
         />
 

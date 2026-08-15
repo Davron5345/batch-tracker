@@ -136,6 +136,10 @@ export type Dictionary = {
     passportSku: string;
     passportBatch: string;
     passportDate: string;
+    passportCountry: string;
+    passportDocTitle: string;
+    passportDocSubtitle: string;
+    passportIdLabel: string;
     extraPhotos: string;
   };
   roles: {
@@ -279,10 +283,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       passportTitleLeft: "МАҲСУЛОТ ПАСПОРТИ / ПАСПОРТ МАҲСУЛОТ",
       passportTitleRight: "ПАСПОРТ ПАРТИИ ПРОДУКТА",
       passportWatermark: "НЕ ЯВЛЯЕТСЯ ДОКУМЕНТОМ",
-      passportProduct: "МАҲСУЛОТ / ТОВАР",
-      passportSku: "АРТИКУЛ / SKU",
-      passportBatch: "ПАРТИЯ РАҚАМИ / НОМЕР ПАРТИИ",
-      passportDate: "ИШЛАБ ЧИҚАРИЛГАН / ДАТА ИЗГОТОВЛЕНИЯ",
+      passportProduct: "Mahsulot / Товар",
+      passportSku: "Artikul / SKU",
+      passportBatch: "Partiya / Номер партии",
+      passportDate: "Ishlab chiqarilgan / Дата изготовления",
+      passportCountry: "O'ZBEKISTON RESPUBLIKASI",
+      passportDocTitle: "MAHSULOT PASPORTI",
+      passportDocSubtitle: "ПАСПОРТ ПАРТИИ | PRODUCT BATCH PASSPORT",
+      passportIdLabel: "Hujjat raqami / № документа",
       extraPhotos: "Дополнительные фото",
     },
     roles: {
@@ -424,10 +432,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       passportTitleLeft: "MAHSULOT PASPORTI",
       passportTitleRight: "ПАСПОРТ ПАРТИИ ПРОДУКТА",
       passportWatermark: "HUJJAT EMAS",
-      passportProduct: "MAHSULOT / ТОВАР",
-      passportSku: "ARTIKUL / SKU",
-      passportBatch: "PARTIYA / НОМЕР ПАРТИИ",
-      passportDate: "ISHLAB CHIQARILGAN / ДАТА ИЗГОТОВЛЕНИЯ",
+      passportProduct: "Mahsulot / Product",
+      passportSku: "Artikul / SKU",
+      passportBatch: "Partiya / Batch no.",
+      passportDate: "Ishlab chiqarilgan / Manufactured",
+      passportCountry: "O'ZBEKISTON RESPUBLIKASI",
+      passportDocTitle: "MAHSULOT PASPORTI",
+      passportDocSubtitle: "ПАСПОРТ ПАРТИИ | PRODUCT BATCH PASSPORT",
+      passportIdLabel: "Hujjat raqami / Document no.",
       extraPhotos: "Qo‘shimcha foto",
     },
     roles: {
@@ -569,10 +581,14 @@ export const dictionaries: Record<Locale, Dictionary> = {
       passportTitleLeft: "PRODUCT PASSPORT",
       passportTitleRight: "BATCH PRODUCT PASSPORT",
       passportWatermark: "NOT AN OFFICIAL DOCUMENT",
-      passportProduct: "PRODUCT / ТОВАР",
-      passportSku: "SKU / АРТИКУЛ",
-      passportBatch: "BATCH NO. / НОМЕР ПАРТИИ",
-      passportDate: "MANUFACTURED / ДАТА ИЗГОТОВЛЕНИЯ",
+      passportProduct: "Product / Товар",
+      passportSku: "SKU / Artikul",
+      passportBatch: "Batch no. / Partiya",
+      passportDate: "Manufactured / Ishlab chiqarilgan",
+      passportCountry: "REPUBLIC OF UZBEKISTAN",
+      passportDocTitle: "PRODUCT BATCH PASSPORT",
+      passportDocSubtitle: "MAHSULOT PASPORTI | ПАСПОРТ ПАРТИИ",
+      passportIdLabel: "Document no. / Hujjat raqami",
       extraPhotos: "Additional photos",
     },
     roles: {
