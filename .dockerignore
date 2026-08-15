@@ -1,0 +1,18 @@
+# Docker ignore for Railway builds
+.git
+.agents
+.claude
+.windsurf
+.next
+node_modules
+prisma/*.db
+prisma/*.db-journal
+public/uploads/*
+!public/uploads/.gitkeep
+storage/archive/*
+!storage/archive/.gitkeep
+.env
+.env.*
+!.env.example
+README.md
+*.md
